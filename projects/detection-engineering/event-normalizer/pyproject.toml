@@ -9,6 +9,9 @@ description = "Normalize selected Suricata EVE and Zeek JSON events"
 requires-python = ">=3.11"
 dependencies = []
 
+[project.scripts]
+security-event-normalizer = "event_normalizer.cli:main"
+
 [tool.setuptools]
 package-dir = {"" = "src"}
 
