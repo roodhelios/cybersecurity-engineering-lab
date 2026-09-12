@@ -9,6 +9,31 @@ A dependency-free Python module that converts selected Suricata EVE and Zeek JSO
 
 The parser intentionally rejects unknown shapes instead of silently guessing. Original records are retained in the normalized object for later evidence and troubleshooting.
 
+## Normalize JSON Lines
+
+Run the module directly with a file:
+
+```bash
+PYTHONPATH=src python -m event_normalizer tests/fixtures/mixed_events.jsonl
+```
+
+Write normalized records to another file:
+
+```bash
+PYTHONPATH=src python -m event_normalizer input.jsonl --output normalized.jsonl
+```
+
+Standard input and output are used when paths are omitted, so the command can also
+participate in a pipeline:
+
+```bash
+cat input.jsonl | PYTHONPATH=src python -m event_normalizer > normalized.jsonl
+```
+
+Empty lines are ignored. Processing stops at the first malformed or unsupported
+record with a source name and line number on standard error. Because processing is
+streaming, records emitted before an error remain in the output.
+
 ## Run tests
 
 ```bash
@@ -39,5 +64,6 @@ print(event.to_dict())
 
 - This is schema normalization, not threat classification.
 - Only a small common field set is mapped; vendor-specific data remains in `raw`.
-- Input is trusted to be a decoded JSON object and is subject to configurable application-level size limits later.
+- The command processes one JSON value per line and does not currently enforce a maximum line size.
+- Fail-fast errors can leave an output file containing the successfully processed prefix.
 - No external systems are contacted.

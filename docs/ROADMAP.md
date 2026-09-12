@@ -8,8 +8,8 @@ The backlog is ordered to produce complete, reviewable systems instead of many d
 - [x] Parse representative Suricata EVE alert records.
 - [x] Parse representative Zeek JSON connection records.
 - [x] Validate timestamps and network ports.
-- [ ] Add a JSON Lines command-line interface.
-- [ ] Add deterministic fixture files and golden-output tests.
+- [x] Add a JSON Lines command-line interface.
+- [x] Add deterministic fixture files and golden-output tests.
 - [ ] Map selected events to MITRE ATT&CK techniques without overstating confidence.
 - [ ] Add correlation for repeated connection attempts in a bounded time window.
 - [ ] Measure throughput and document the test environment.
