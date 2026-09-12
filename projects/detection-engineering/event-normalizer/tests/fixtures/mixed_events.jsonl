@@ -1,0 +1,2 @@
+{"timestamp":"2026-09-12T18:30:00Z","event_type":"alert","src_ip":"192.0.2.10","src_port":51514,"dest_ip":"198.51.100.20","dest_port":443,"proto":"TCP","alert":{"severity":2,"signature":"Synthetic test alert"}}
+{"ts":1789237800.5,"uid":"Csynthetic123","_path":"conn","id.orig_h":"192.0.2.30","id.orig_p":53123,"id.resp_h":"198.51.100.53","id.resp_p":53,"proto":"udp"}
