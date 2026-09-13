@@ -9,6 +9,7 @@ from contextlib import ExitStack
 from pathlib import Path
 from typing import Sequence, TextIO
 
+from .attack import map_attack_candidates
 from .normalizer import NormalizationError, normalize_event
 
 
@@ -21,6 +22,7 @@ def normalize_jsonl(
     destination: TextIO,
     *,
     source_name: str = "<stdin>",
+    include_attack_mappings: bool = False,
 ) -> int:
     """Normalize non-empty JSON Lines records and return the emitted count."""
 
@@ -41,9 +43,12 @@ def normalize_jsonl(
         except NormalizationError as exc:
             raise JsonlInputError(f"{source_name}:{line_number}: {exc}") from exc
 
-        destination.write(
-            json.dumps(event.to_dict(), sort_keys=True, separators=(",", ":"))
-        )
+        output = event.to_dict()
+        if include_attack_mappings:
+            output["attack_mappings"] = [
+                candidate.to_dict() for candidate in map_attack_candidates(event)
+            ]
+        destination.write(json.dumps(output, sort_keys=True, separators=(",", ":")))
         destination.write("\n")
         emitted += 1
 
@@ -60,6 +65,11 @@ def _argument_parser() -> argparse.ArgumentParser:
         nargs="?",
         default="-",
         help="input JSONL path, or - for standard input (default: -)",
+    )
+    parser.add_argument(
+        "--attack-mappings",
+        action="store_true",
+        help="include conservative ATT&CK candidates and their evidence",
     )
     parser.add_argument(
         "-o",
@@ -98,7 +108,12 @@ def main(argv: Sequence[str] | None = None) -> int:
                     Path(args.output).open("w", encoding="utf-8", newline="\n")
                 )
 
-            normalize_jsonl(source, destination, source_name=source_name)
+            normalize_jsonl(
+                source,
+                destination,
+                source_name=source_name,
+                include_attack_mappings=args.attack_mappings,
+            )
     except (JsonlInputError, OSError) as exc:
         print(f"error: {exc}", file=sys.stderr)
         return 2
