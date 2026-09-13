@@ -26,6 +26,14 @@ Build a credible cybersecurity engineering portfolio by extending prior areas of
 - Prefer standard-library implementations initially; add dependencies only when they materially improve the solution.
 - Preserve backward compatibility unless the pull request clearly documents and tests an intentional break.
 
+## Writing style
+
+- Use plain, direct English that sounds like Aryan explaining the work to another engineer.
+- Never use the em dash character. Use a period, comma, colon, or parentheses instead.
+- Avoid generic marketing language and stock phrases such as "robust," "seamless," "leveraging," and "comprehensive" unless they are technically necessary and supported by evidence.
+- Describe the exact problem, change, test result, limitation, and next step. Do not pad pull requests or documentation with repetitive sections.
+- Keep the tone natural, but never claim that Aryan manually completed or measured something unless the repository contains evidence for it.
+
 ## Security boundaries
 
 - Use synthetic fixtures or explicitly authorized lab data.
