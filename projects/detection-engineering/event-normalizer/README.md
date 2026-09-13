@@ -34,6 +34,19 @@ Empty lines are ignored. Processing stops at the first malformed or unsupported
 record with a source name and line number on standard error. Because processing is
 streaming, records emitted before an error remain in the output.
 
+## Add ATT&CK candidates
+
+Use `--attack-mappings` to add conservative MITRE ATT&CK candidates:
+
+```bash
+PYTHONPATH=src python -m event_normalizer input.jsonl --attack-mappings
+```
+
+Every candidate includes a technique ID, tactic, confidence, rule ID, and the exact
+event fields that caused the mapping. Explicit Suricata technique metadata receives
+medium confidence. One incomplete Zeek SYN can produce only a low-confidence T1046
+candidate because a single failed connection does not prove scanning.
+
 ## Run tests
 
 ```bash
@@ -62,7 +75,10 @@ print(event.to_dict())
 
 ## Limitations
 
-- This is schema normalization, not threat classification.
+- ATT&CK output contains investigation candidates, not confirmed attacker behavior.
+- The mapper recognizes a small allowlist of technique IDs and ignores unknown IDs.
+- A later correlation stage is needed before repeated connections can support a
+  stronger scanning assessment.
 - Only a small common field set is mapped; vendor-specific data remains in `raw`.
 - The command processes one JSON value per line and does not currently enforce a maximum line size.
 - Fail-fast errors can leave an output file containing the successfully processed prefix.
