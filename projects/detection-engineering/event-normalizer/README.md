@@ -47,6 +47,22 @@ event fields that caused the mapping. Explicit Suricata technique metadata recei
 medium confidence. One incomplete Zeek SYN can produce only a low-confidence T1046
 candidate because a single failed connection does not prove scanning.
 
+## Correlate repeated attempts
+
+The Python API can group repeated Zeek `S0` connections from one source inside a
+bounded time window:
+
+```python
+from event_normalizer import correlate_repeated_attempts
+
+findings = correlate_repeated_attempts(normalized_events)
+```
+
+The default rule requires at least four incomplete SYN attempts against at least three
+distinct destination and port pairs within 60 seconds. Windows are deterministic and
+non-overlapping. A finding is a medium-confidence investigation candidate, not proof
+of scanning or compromise.
+
 ## Run tests
 
 ```bash
@@ -77,8 +93,10 @@ print(event.to_dict())
 
 - ATT&CK output contains investigation candidates, not confirmed attacker behavior.
 - The mapper recognizes a small allowlist of technique IDs and ignores unknown IDs.
-- A later correlation stage is needed before repeated connections can support a
-  stronger scanning assessment.
+- Correlation currently covers Zeek `conn` records with the exact `S0` and `S` evidence
+  pair. It does not infer intent or inspect packet payloads.
+- Correlation is an in-memory batch API. Input retention and high-volume streaming are
+  not implemented yet.
 - Only a small common field set is mapped; vendor-specific data remains in `raw`.
 - The command processes one JSON value per line and does not currently enforce a maximum line size.
 - Fail-fast errors can leave an output file containing the successfully processed prefix.
