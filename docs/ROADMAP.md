@@ -12,7 +12,7 @@ The backlog is ordered to produce complete, reviewable systems instead of many d
 - [x] Add deterministic fixture files and golden-output tests.
 - [x] Map selected events to MITRE ATT&CK techniques without overstating confidence.
 - [x] Add correlation for repeated connection attempts in a bounded time window.
-- [ ] Measure throughput and document the test environment.
+- [x] Measure throughput and document the test environment.
 
 ## Milestone 2: Aegis authorization core
 

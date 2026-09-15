@@ -1,0 +1,33 @@
+{
+  "duration_seconds": [
+    0.30649631500000396,
+    0.30458499299999175,
+    0.28774219499996434,
+    0.274808065000002,
+    0.2829163960000187
+  ],
+  "environment": {
+    "architecture": "x86_64",
+    "execution": "single_process_single_thread",
+    "logical_cpu_count": 9,
+    "operating_system": "Linux",
+    "python_implementation": "CPython",
+    "python_version": "3.12.14"
+  },
+  "event_count_per_round": 50000,
+  "events_per_second": [
+    163134.09836591137,
+    164157.79223896743,
+    173766.65942235617,
+    181945.1696222949,
+    176730.65508722476
+  ],
+  "limitations": [
+    "The timed section normalizes prebuilt Python mappings.",
+    "JSON decoding, file I/O, ATT&CK mapping, and correlation are excluded.",
+    "This local measurement is not a production capacity claim."
+  ],
+  "median_events_per_second": 173766.65942235617,
+  "rounds": 5,
+  "workload": "synthetic_zeek_normalization"
+}

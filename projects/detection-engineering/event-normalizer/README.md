@@ -69,6 +69,18 @@ of scanning or compromise.
 python -m unittest discover -s tests -v
 ```
 
+## Measure local normalization throughput
+
+Run the deterministic benchmark without contacting external systems:
+
+```bash
+PYTHONPATH=src python -m event_normalizer.benchmark_cli --events 50000 --rounds 5
+```
+
+The command emits machine-readable JSON with every timing sample and a description of
+excluded work. See [the throughput notes](docs/THROUGHPUT.md) for the recorded local
+run and its limitations.
+
 ## Example
 
 ```python
