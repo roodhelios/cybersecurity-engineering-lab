@@ -11,6 +11,7 @@ dependencies = []
 
 [project.scripts]
 security-event-normalizer = "event_normalizer.cli:main"
+security-event-benchmark = "event_normalizer.benchmark_cli:main"
 
 [tool.setuptools]
 package-dir = {"" = "src"}
