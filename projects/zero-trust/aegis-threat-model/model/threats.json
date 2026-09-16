@@ -1,0 +1,209 @@
+{
+  "schema_version": 1,
+  "system": "Aegis authorization core portfolio reimplementation",
+  "scope": {
+    "included": [
+      "Signed tool requests from an agent to the authorization proxy",
+      "Agent status and active public-key lookup",
+      "Nonce and timestamp replay protection",
+      "OPA authorization decisions",
+      "Security audit records for allow and deny outcomes"
+    ],
+    "excluded": [
+      "Model training and prompt safety",
+      "Security of third-party tools after an approved invocation",
+      "Cloud deployment availability and disaster recovery",
+      "Human identity proofing for agent enrollment"
+    ]
+  },
+  "assets": [
+    {
+      "id": "asset:agent-identity",
+      "description": "The binding between an agent identifier and its active Ed25519 public key"
+    },
+    {
+      "id": "asset:request-intent",
+      "description": "The signed tool name, arguments, session, timestamp, and nonce"
+    },
+    {
+      "id": "asset:authorization-policy",
+      "description": "The least-privilege rules used to allow, deny, or require step-up approval"
+    },
+    {
+      "id": "asset:step-up-binding",
+      "description": "A short-lived approval bound to one agent and session"
+    },
+    {
+      "id": "asset:audit-evidence",
+      "description": "Decision records used to reconstruct authorization outcomes"
+    }
+  ],
+  "trust_boundaries": [
+    {
+      "id": "boundary:agent-proxy",
+      "description": "Untrusted agent input crosses into the authorization proxy"
+    },
+    {
+      "id": "boundary:proxy-registry",
+      "description": "The proxy reads agent status and active public keys from the registry"
+    },
+    {
+      "id": "boundary:proxy-policy",
+      "description": "The proxy sends a bounded decision input to the policy engine"
+    },
+    {
+      "id": "boundary:proxy-audit",
+      "description": "Authorization evidence leaves the request path for durable storage"
+    }
+  ],
+  "controls": [
+    {
+      "id": "control:canonical-signature",
+      "description": "Verify an Ed25519 signature over canonical request fields"
+    },
+    {
+      "id": "control:active-key-status",
+      "description": "Reject unknown, revoked, or keyless agent identities"
+    },
+    {
+      "id": "control:replay-window",
+      "description": "Enforce bounded clock skew and atomically reserve each nonce"
+    },
+    {
+      "id": "control:least-privilege-policy",
+      "description": "Evaluate explicit tool and risk rules with deny as the fallback"
+    },
+    {
+      "id": "control:step-up-binding",
+      "description": "Bind short-lived approval to the requesting agent and session"
+    },
+    {
+      "id": "control:bounded-input",
+      "description": "Reject oversized identifiers, arguments, and malformed encodings before expensive work"
+    },
+    {
+      "id": "control:audit-integrity",
+      "description": "Record decision inputs and a chained digest in an append-only format"
+    },
+    {
+      "id": "control:audit-minimization",
+      "description": "Store approved evidence fields and redact configured sensitive values"
+    }
+  ],
+  "evidence": [
+    {
+      "id": "evidence:signature-tests",
+      "description": "Planned tests for changed arguments, malformed signatures, and retired keys"
+    },
+    {
+      "id": "evidence:replay-tests",
+      "description": "Planned tests for reused nonces and past or future timestamps"
+    },
+    {
+      "id": "evidence:policy-tests",
+      "description": "Planned policy cases for allowed tools, denied tools, and step-up decisions"
+    },
+    {
+      "id": "evidence:binding-tests",
+      "description": "Planned tests for cross-agent, cross-session, and expired step-up tokens"
+    },
+    {
+      "id": "evidence:input-boundary-tests",
+      "description": "Planned tests for malformed and oversized request fields"
+    },
+    {
+      "id": "evidence:audit-chain-tests",
+      "description": "Planned tests that detect deletion, reordering, and mutation of audit records"
+    },
+    {
+      "id": "evidence:audit-redaction-tests",
+      "description": "Planned tests that ensure configured sensitive argument values are not persisted"
+    }
+  ],
+  "threats": [
+    {
+      "id": "TM-001",
+      "title": "Agent identity spoofing",
+      "stride": "spoofing",
+      "boundary": "boundary:agent-proxy",
+      "assets": ["asset:agent-identity", "asset:request-intent"],
+      "entry_points": ["POST /invoke"],
+      "abuse_case": "A caller presents another agent identifier or a signature from an unregistered key.",
+      "controls": ["control:canonical-signature", "control:active-key-status"],
+      "evidence": ["evidence:signature-tests"],
+      "residual_risk": "A stolen active private key remains valid until it is revoked or rotated."
+    },
+    {
+      "id": "TM-002",
+      "title": "Signed request tampering",
+      "stride": "tampering",
+      "boundary": "boundary:agent-proxy",
+      "assets": ["asset:request-intent"],
+      "entry_points": ["Tool name", "Tool arguments", "Session identifier"],
+      "abuse_case": "An intermediary changes a tool or argument after the agent signs the request.",
+      "controls": ["control:canonical-signature", "control:bounded-input"],
+      "evidence": ["evidence:signature-tests", "evidence:input-boundary-tests"],
+      "residual_risk": "Canonicalization bugs can create different meanings for the same signed bytes."
+    },
+    {
+      "id": "TM-003",
+      "title": "Captured request replay",
+      "stride": "spoofing",
+      "boundary": "boundary:agent-proxy",
+      "assets": ["asset:request-intent"],
+      "entry_points": ["Timestamp", "Nonce", "POST /invoke"],
+      "abuse_case": "A valid signed request is submitted again inside or outside its accepted time window.",
+      "controls": ["control:replay-window", "control:canonical-signature"],
+      "evidence": ["evidence:replay-tests"],
+      "residual_risk": "Distributed nonce stores can fail open if consistency and failure behavior are not explicit."
+    },
+    {
+      "id": "TM-004",
+      "title": "Decision repudiation",
+      "stride": "repudiation",
+      "boundary": "boundary:proxy-audit",
+      "assets": ["asset:audit-evidence", "asset:request-intent"],
+      "entry_points": ["Authorization decision writer", "Audit record reader"],
+      "abuse_case": "A decision is denied later because its evidence was omitted, changed, reordered, or deleted.",
+      "controls": ["control:audit-integrity"],
+      "evidence": ["evidence:audit-chain-tests"],
+      "residual_risk": "A digest chain does not prevent an administrator from deleting the entire store."
+    },
+    {
+      "id": "TM-005",
+      "title": "Sensitive argument disclosure through audit records",
+      "stride": "information_disclosure",
+      "boundary": "boundary:proxy-audit",
+      "assets": ["asset:request-intent", "asset:audit-evidence"],
+      "entry_points": ["Tool argument serialization", "Audit query endpoint"],
+      "abuse_case": "Secrets or personal data in tool arguments are copied into a broadly readable audit record.",
+      "controls": ["control:audit-minimization", "control:bounded-input"],
+      "evidence": ["evidence:audit-redaction-tests", "evidence:input-boundary-tests"],
+      "residual_risk": "Unknown sensitive fields may not match the configured redaction policy."
+    },
+    {
+      "id": "TM-006",
+      "title": "Authentication resource exhaustion",
+      "stride": "denial_of_service",
+      "boundary": "boundary:agent-proxy",
+      "assets": ["asset:agent-identity", "asset:request-intent"],
+      "entry_points": ["Signature input", "Nonce reservation", "Registry lookup"],
+      "abuse_case": "A caller sends many expensive or oversized invalid requests to consume CPU or dependency capacity.",
+      "controls": ["control:bounded-input", "control:replay-window"],
+      "evidence": ["evidence:input-boundary-tests", "evidence:replay-tests"],
+      "residual_risk": "Application validation does not replace connection and service rate limits."
+    },
+    {
+      "id": "TM-007",
+      "title": "Tool privilege escalation",
+      "stride": "elevation_of_privilege",
+      "boundary": "boundary:proxy-policy",
+      "assets": ["asset:authorization-policy", "asset:step-up-binding"],
+      "entry_points": ["Tool sensitivity", "Risk score", "Step-up token"],
+      "abuse_case": "An authenticated agent requests a tool outside its intended permissions or reuses another session's approval.",
+      "controls": ["control:least-privilege-policy", "control:step-up-binding"],
+      "evidence": ["evidence:policy-tests", "evidence:binding-tests"],
+      "residual_risk": "A policy can still allow unsafe behavior if tool impact or argument context is modeled incorrectly."
+    }
+  ]
+}
