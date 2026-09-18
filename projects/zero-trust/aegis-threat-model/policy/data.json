@@ -1,0 +1,38 @@
+{
+  "agent_roles": {
+    "agent-analyst": [
+      "analyst"
+    ],
+    "agent-auditor": [
+      "auditor"
+    ],
+    "agent-responder": [
+      "responder"
+    ]
+  },
+  "schema_version": 1,
+  "thresholds": {
+    "step_up_risk": 70
+  },
+  "tools": {
+    "asset.quarantine": {
+      "roles": [
+        "responder"
+      ],
+      "sensitivity": "high"
+    },
+    "audit.read": {
+      "roles": [
+        "auditor"
+      ],
+      "sensitivity": "medium"
+    },
+    "inventory.lookup": {
+      "roles": [
+        "analyst",
+        "responder"
+      ],
+      "sensitivity": "low"
+    }
+  }
+}
