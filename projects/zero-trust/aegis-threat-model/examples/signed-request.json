@@ -1,0 +1,12 @@
+{
+  "agent_id": "agent-fixture-1",
+  "nonce": "nonce-fixture-0001",
+  "session_id": "session-fixture-1",
+  "signature_b64": "W1ahxbTWeKtyGYs9nwUbt7U8NEbnCG3Y/J5Nv0Gs64PHXDy+0a1cA3V5EU+aubMd7dqYwwp5/pdiEZOyULCFDg==",
+  "timestamp": 1789686000,
+  "tool_args": {
+    "asset_id": "asset-synthetic-001",
+    "include_findings": true
+  },
+  "tool_name": "inventory.lookup"
+}

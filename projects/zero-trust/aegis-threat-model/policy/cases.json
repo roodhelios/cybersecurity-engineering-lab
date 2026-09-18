@@ -1,0 +1,109 @@
+{
+  "cases": [
+    {
+      "case_id": "analyst-can-read-inventory",
+      "expected": {
+        "effect": "allow",
+        "reason": "authorized"
+      },
+      "input": {
+        "agent_id": "agent-analyst",
+        "risk_score": 20,
+        "step_up_token_valid": false,
+        "tool_name": "inventory.lookup"
+      }
+    },
+    {
+      "case_id": "analyst-cannot-quarantine",
+      "expected": {
+        "effect": "deny",
+        "reason": "role_not_allowed"
+      },
+      "input": {
+        "agent_id": "agent-analyst",
+        "risk_score": 80,
+        "step_up_token_valid": false,
+        "tool_name": "asset.quarantine"
+      }
+    },
+    {
+      "case_id": "responder-high-risk-needs-step-up",
+      "expected": {
+        "effect": "step_up",
+        "reason": "step_up_required"
+      },
+      "input": {
+        "agent_id": "agent-responder",
+        "risk_score": 80,
+        "step_up_token_valid": false,
+        "tool_name": "asset.quarantine"
+      }
+    },
+    {
+      "case_id": "responder-step-up-allows-high-risk-tool",
+      "expected": {
+        "effect": "allow",
+        "reason": "authorized"
+      },
+      "input": {
+        "agent_id": "agent-responder",
+        "risk_score": 80,
+        "step_up_token_valid": true,
+        "tool_name": "asset.quarantine"
+      }
+    },
+    {
+      "case_id": "responder-low-risk-does-not-need-step-up",
+      "expected": {
+        "effect": "allow",
+        "reason": "authorized"
+      },
+      "input": {
+        "agent_id": "agent-responder",
+        "risk_score": 30,
+        "step_up_token_valid": false,
+        "tool_name": "asset.quarantine"
+      }
+    },
+    {
+      "case_id": "auditor-can-read-audit",
+      "expected": {
+        "effect": "allow",
+        "reason": "authorized"
+      },
+      "input": {
+        "agent_id": "agent-auditor",
+        "risk_score": 10,
+        "step_up_token_valid": false,
+        "tool_name": "audit.read"
+      }
+    },
+    {
+      "case_id": "unknown-tool-denies",
+      "expected": {
+        "effect": "deny",
+        "reason": "unknown_tool"
+      },
+      "input": {
+        "agent_id": "agent-responder",
+        "risk_score": 10,
+        "step_up_token_valid": false,
+        "tool_name": "tool.not.registered"
+      }
+    },
+    {
+      "case_id": "unknown-agent-denies",
+      "expected": {
+        "effect": "deny",
+        "reason": "role_not_allowed"
+      },
+      "input": {
+        "agent_id": "agent-not-registered",
+        "risk_score": 10,
+        "step_up_token_valid": false,
+        "tool_name": "inventory.lookup"
+      }
+    }
+  ],
+  "schema_version": 1
+}
