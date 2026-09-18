@@ -101,7 +101,7 @@
     },
     {
       "id": "evidence:policy-tests",
-      "description": "Planned policy cases for allowed tools, denied tools, and step-up decisions"
+      "description": "Fixture cases cover allow, deny, and step-up decisions through a Python oracle; Rego-native OPA execution remains planned"
     },
     {
       "id": "evidence:binding-tests",

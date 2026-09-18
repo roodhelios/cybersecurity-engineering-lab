@@ -18,7 +18,8 @@ The backlog is ordered to produce complete, reviewable systems instead of many d
 
 - [x] Write a scoped threat model for tool-using AI agents.
 - [x] Implement signed request verification with timestamp and nonce validation.
-- [ ] Create OPA policies for least-privilege tool access.
+- [ ] Create OPA policies for least-privilege tool access. A Rego draft and Python
+  fixture oracle exist, but Rego-native OPA tests are still required.
 - [ ] Add replay, privilege-escalation, malformed-signature, and clock-skew tests.
 - [ ] Produce an append-only audit record format and integrity checks.
 
