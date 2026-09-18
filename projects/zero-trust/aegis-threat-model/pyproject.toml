@@ -7,10 +7,11 @@ name = "aegis-threat-model"
 version = "0.1.0"
 description = "Validate a scoped threat catalog for an AI tool authorization core"
 requires-python = ">=3.11"
-dependencies = []
+dependencies = ["cryptography>=43,<47"]
 
 [project.scripts]
 aegis-threat-model = "aegis_threat_model.cli:main"
+aegis-verify-request = "aegis_threat_model.verify_cli:main"
 
 [tool.setuptools]
 package-dir = {"" = "src"}
