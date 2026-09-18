@@ -15,6 +15,19 @@ cd projects/detection-engineering/event-normalizer
 python -m unittest discover -s tests -v
 ```
 
+### Aegis Authorization Threat Catalog
+
+The Zero Trust track now starts with a machine-readable threat catalog for signed tool
+requests, replay protection, policy decisions, step-up binding, and audit evidence. The
+Python validator rejects unresolved references and contradictory scope before later
+controls are treated as implemented.
+
+```bash
+cd projects/zero-trust/aegis-threat-model
+PYTHONPATH=src python -m aegis_threat_model.cli model/threats.json
+python -m unittest discover -s tests -v
+```
+
 ## Project tracks
 
 | Track | Starting point | Planned extensions |
