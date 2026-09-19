@@ -133,6 +133,14 @@ class PolicyInput:
     risk_score: int
     step_up_token_valid: bool
 
+    def to_dict(self) -> dict[str, Any]:
+        return {
+            "agent_id": self.agent_id,
+            "tool_name": self.tool_name,
+            "risk_score": self.risk_score,
+            "step_up_token_valid": self.step_up_token_valid,
+        }
+
     @classmethod
     def from_dict(cls, value: Mapping[str, Any]) -> "PolicyInput":
         value = _mapping(value, "case input")
