@@ -1,5 +1,6 @@
 """Machine-readable threat model validation for the Aegis lab track."""
 
+from .authorization import AuthorizationDecision, authorize_signed_request
 from .model import Threat, ThreatCatalog, ThreatModelError, load_catalog, parse_catalog
 from .opa_conformance import (
     OpaCaseResult,
@@ -29,6 +30,7 @@ from .verification import (
 
 __all__ = [
     "AgentCredential",
+    "AuthorizationDecision",
     "MemoryNonceStore",
     "OpaCaseResult",
     "OpaConformanceError",
@@ -44,6 +46,7 @@ __all__ = [
     "ThreatModelError",
     "VerificationDecision",
     "canonical_request",
+    "authorize_signed_request",
     "decide",
     "evaluate_cases",
     "evaluate_case_with_opa",
