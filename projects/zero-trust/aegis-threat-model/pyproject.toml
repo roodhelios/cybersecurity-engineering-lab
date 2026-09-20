@@ -13,6 +13,7 @@ dependencies = ["cryptography>=43,<47"]
 aegis-threat-model = "aegis_threat_model.cli:main"
 aegis-verify-request = "aegis_threat_model.verify_cli:main"
 aegis-policy-cases = "aegis_threat_model.policy_cli:main"
+aegis-opa-conformance = "aegis_threat_model.opa_conformance_cli:main"
 
 [tool.setuptools]
 package-dir = {"" = "src"}

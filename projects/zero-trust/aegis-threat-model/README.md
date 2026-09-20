@@ -56,7 +56,23 @@ PYTHONPATH=src python -m aegis_threat_model.policy_cli \
 
 The Python oracle makes expected decisions reviewable without a running policy service.
 It is not an OPA interpreter and does not prove that the Rego engine returns the same
-results. The roadmap item remains incomplete until the cases also run with `opa test`.
+results.
+
+When an OPA executable is installed, run the same cases through the real evaluator:
+
+```bash
+PYTHONPATH=src python -m aegis_threat_model.opa_conformance_cli \
+  --opa opa \
+  --data policy/data.json \
+  --cases policy/cases.json \
+  --rego policy/aegis.rego
+```
+
+The runner sends each fixture to `opa eval`, validates the returned decision shape, and
+reports every mismatch. Unit tests use a local fake executable to test process, parsing,
+and failure behavior. An additional integration test runs only when `opa` is present.
+The roadmap item remains incomplete until that integration test passes with an actual
+OPA release.
 
 ## What the evidence fields mean
 
@@ -69,8 +85,8 @@ later controls will need to satisfy.
 - Verification uses an in-memory nonce store and does not prove distributed replay
   safety.
 - Canonical request bytes use documented Python JSON serialization, not RFC 8785.
-- Policy fixtures pass a Python reference evaluator, but Rego-native execution has not
-  been run in this environment.
+- Policy fixtures pass a Python reference evaluator. The OPA conformance runner is
+  ready, but Rego-native execution has not been run in this environment.
 - STRIDE categories organize review but do not prove that every possible abuse case is
   represented.
 - Rate limiting, deployment availability, and tool behavior stay outside the current
@@ -79,5 +95,5 @@ later controls will need to satisfy.
 
 ## Next step
 
-Add Rego-native tests that run the same eight cases with the OPA CLI, then mark the
-least-privilege policy milestone complete only if both evaluators agree.
+Run the opt-in conformance test with an installed OPA release and record the version.
+Mark the least-privilege policy milestone complete only if both evaluators agree.
