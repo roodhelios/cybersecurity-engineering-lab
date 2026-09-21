@@ -15,6 +15,7 @@ aegis-verify-request = "aegis_threat_model.verify_cli:main"
 aegis-authorize-request = "aegis_threat_model.authorization_cli:main"
 aegis-policy-cases = "aegis_threat_model.policy_cli:main"
 aegis-opa-conformance = "aegis_threat_model.opa_conformance_cli:main"
+aegis-audit-chain = "aegis_threat_model.audit_cli:main"
 
 [tool.setuptools]
 package-dir = {"" = "src"}
