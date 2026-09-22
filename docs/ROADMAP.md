@@ -21,8 +21,8 @@ The backlog is ordered to produce complete, reviewable systems instead of many d
 - [ ] Create OPA policies for least-privilege tool access. A Rego draft and Python
   fixture oracle exist. The OPA conformance runner is ready, but a run with an actual
   OPA release is still required.
-- [ ] Add replay, privilege-escalation, malformed-signature, and clock-skew tests.
-- [ ] Produce an append-only audit record format and integrity checks.
+- [x] Add replay, privilege-escalation, malformed-signature, and clock-skew tests.
+- [x] Produce an append-only audit record format and integrity checks.
 
 ## Milestone 3: AWS security baseline
 

@@ -6,6 +6,9 @@
     "agent-auditor": [
       "auditor"
     ],
+    "agent-fixture-1": [
+      "analyst"
+    ],
     "agent-responder": [
       "responder"
     ]

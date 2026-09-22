@@ -74,6 +74,47 @@ and failure behavior. An additional integration test runs only when `opa` is pre
 The roadmap item remains incomplete until that integration test passes with an actual
 OPA release.
 
+## Exercise the combined authorization boundary
+
+The combined harness validates decision inputs, verifies the signed request, and only
+then evaluates policy:
+
+```bash
+PYTHONPATH=src python -m aegis_threat_model.authorization_cli \
+  --request examples/signed-request.json \
+  --credential examples/credential.json \
+  --policy policy/data.json \
+  --risk-score 20 \
+  --now 1789686000
+```
+
+Cross-control tests cover replay, malformed signatures, past and future clock skew,
+signed role escalation, and high-risk step-up behavior. Verification failures never
+reach policy evaluation. A request that passes signature checks can still be denied or
+held for step-up by the least-privilege policy.
+
+## Verify append-only audit evidence
+
+Authorization decisions can be stored as versioned JSON Lines records. Every record
+contains a contiguous sequence, the previous record hash, and a SHA-256 digest over
+all of its decision evidence:
+
+```bash
+PYTHONPATH=src python -m aegis_threat_model.audit_cli \
+  examples/audit-records.jsonl
+```
+
+The verifier recomputes each record digest and checks the complete chain. It rejects a
+missing or reordered sequence, a broken previous-hash link, a duplicate request ID,
+time moving backward, and invalid combinations such as an allowed request at the
+verification stage. The example is a synthetic fixture and is not evidence from a
+running service.
+
+`build_audit_record` creates the next record from explicit decision fields and a
+caller-supplied previous hash. Durable append semantics, file locking, key management,
+and external timestamping remain deployment concerns. A user who can replace the
+whole file can replace both the records and their hashes.
+
 ## What the evidence fields mean
 
 The signature and replay evidence entries point to implemented tests. Policy, step-up,
@@ -87,6 +128,10 @@ later controls will need to satisfy.
 - Canonical request bytes use documented Python JSON serialization, not RFC 8785.
 - Policy fixtures pass a Python reference evaluator. The OPA conformance runner is
   ready, but Rego-native execution has not been run in this environment.
+- The combined authorization harness uses the Python policy oracle until native OPA
+  conformance is established.
+- Hash links expose edits within a retained audit file, but they do not protect against
+  whole-file replacement without an independently stored head hash.
 - STRIDE categories organize review but do not prove that every possible abuse case is
   represented.
 - Rate limiting, deployment availability, and tool behavior stay outside the current
@@ -96,4 +141,6 @@ later controls will need to satisfy.
 ## Next step
 
 Run the opt-in conformance test with an installed OPA release and record the version.
-Mark the least-privilege policy milestone complete only if both evaluators agree.
+Mark the least-privilege policy milestone complete only if both evaluators agree. Then
+use the same combined regression cases against the native policy result. After that,
+begin the AWS security baseline with a zero-surprise cost and teardown model.
