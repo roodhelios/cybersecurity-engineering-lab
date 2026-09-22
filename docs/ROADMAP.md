@@ -26,7 +26,7 @@ The backlog is ordered to produce complete, reviewable systems instead of many d
 
 ## Milestone 3: AWS security baseline
 
-- [ ] Document a zero-surprise cost model and teardown procedure.
+- [x] Document a zero-surprise cost model and teardown procedure.
 - [ ] Define IAM and MFA guardrails as testable policy.
 - [ ] Add local static checks for unsafe infrastructure-as-code examples.
 - [ ] Add CloudTrail-oriented incident queries using synthetic events.
