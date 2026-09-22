@@ -1,0 +1,39 @@
+{
+  "schema_version": 1,
+  "project": "aws-security-baseline-lab",
+  "owner": "portfolio-lab",
+  "currency": "USD",
+  "monthly_budget_usd": "10.00",
+  "alert_thresholds_percent": [50, 80, 100],
+  "controls": {
+    "root_mfa_confirmed": true,
+    "budget_alert_configured": true,
+    "unbounded_usage_allowed": false
+  },
+  "resources": [
+    {
+      "resource_id": "cloudtrail-log-archive",
+      "service": "Amazon S3",
+      "region": "us-east-1",
+      "monthly_cap_usd": "2.50",
+      "termination_condition": "Remove after the synthetic logging lab is reviewed",
+      "teardown_steps": [
+        "Disable the synthetic trail before deleting its destination",
+        "Empty and delete the fixture log bucket"
+      ],
+      "verification": "Confirm that the fixture trail and bucket are absent"
+    },
+    {
+      "resource_id": "security-event-metrics",
+      "service": "Amazon CloudWatch",
+      "region": "us-east-1",
+      "monthly_cap_usd": "1.50",
+      "termination_condition": "Remove after the alert query examples are exported",
+      "teardown_steps": [
+        "Delete the fixture metric filters",
+        "Delete the fixture log group"
+      ],
+      "verification": "Confirm that no fixture log group or alarm remains"
+    }
+  ]
+}
