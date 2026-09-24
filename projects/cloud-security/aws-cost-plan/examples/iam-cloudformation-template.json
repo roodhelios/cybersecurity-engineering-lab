@@ -1,0 +1,26 @@
+{
+  "AWSTemplateFormatVersion": "2010-09-09",
+  "Description": "Synthetic IAM example for the offline policy reviewer",
+  "Resources": {
+    "FixtureRole": {
+      "Type": "AWS::IAM::Role",
+      "Properties": {
+        "Policies": [
+          {
+            "PolicyName": "ReadFixtureLogs",
+            "PolicyDocument": {
+              "Version": "2012-10-17",
+              "Statement": [
+                {
+                  "Effect": "Allow",
+                  "Action": "s3:GetObject",
+                  "Resource": "arn:aws:s3:::portfolio-fixture-logs/lab/*"
+                }
+              ]
+            }
+          }
+        ]
+      }
+    }
+  }
+}
