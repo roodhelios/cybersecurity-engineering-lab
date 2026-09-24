@@ -13,6 +13,25 @@ The version 1 contract requires:
   post-teardown check for every planned resource
 - combined resource caps that do not exceed the monthly budget
 
+The same project includes an offline review aid for IAM identity policy JSON. It flags
+wildcard Allow actions, unrestricted `Resource: "*"`, and IAM or role-assumption
+permissions without an explicit MFA condition. Unsupported policy grammar is rejected
+so the tool does not guess at resource policies or `NotAction` semantics.
+`BoolIfExists` does not satisfy the MFA check because a missing MFA context key can make
+that condition pass without proving MFA. AWS documents that `BoolIfExists` with
+`aws:MultiFactorAuthPresent: "true"` can allow requests made with long-term access
+keys. See [AWS condition operators](https://docs.aws.amazon.com/IAM/latest/UserGuide/reference_policies_elements_condition_operators.html)
+and [AWS global condition keys](https://docs.aws.amazon.com/IAM/latest/UserGuide/reference_policies_condition-keys.html).
+
+```bash
+PYTHONPATH=src python -m aws_cost_plan.iam_cli examples/iam-identity-policy.json
+python -m unittest discover -s tests -v
+```
+
+This is a conservative static review, not an AWS IAM simulator. It does not establish
+that a principal has MFA, that an ARN exists, or that a condition behaves as intended
+for every caller type. Review the policy in the owned account before use.
+
 Validate the synthetic example from this directory:
 
 ```bash

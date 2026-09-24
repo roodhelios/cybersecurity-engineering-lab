@@ -27,7 +27,9 @@ The backlog is ordered to produce complete, reviewable systems instead of many d
 ## Milestone 3: AWS security baseline
 
 - [x] Document a zero-surprise cost model and teardown procedure.
-- [ ] Define IAM and MFA guardrails as testable policy.
+- [x] Define an offline IAM identity policy review for broad Allow permissions and
+  explicit MFA conditions on IAM and role-assumption actions. This is not a live IAM
+  simulation and does not verify MFA enrollment.
 - [ ] Add local static checks for unsafe infrastructure-as-code examples.
 - [ ] Add CloudTrail-oriented incident queries using synthetic events.
 - [ ] Create an account-compromise response runbook.
