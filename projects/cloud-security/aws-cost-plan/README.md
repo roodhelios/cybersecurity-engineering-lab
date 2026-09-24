@@ -32,6 +32,20 @@ This is a conservative static review, not an AWS IAM simulator. It does not esta
 that a principal has MFA, that an ARN exists, or that a condition behaves as intended
 for every caller type. Review the policy in the owned account before use.
 
+Embedded policies in local CloudFormation JSON can use the same checks:
+
+```bash
+PYTHONPATH=src python -m aws_cost_plan.cloudformation_iam_cli examples/iam-cloudformation-template.json
+```
+
+The scanner recognizes inline policies on `AWS::IAM::Role`, `AWS::IAM::Policy`, and
+`AWS::IAM::ManagedPolicy`. It does not parse YAML, evaluate `Ref` or other intrinsic
+functions, inspect role trust documents, or resolve effective permissions. A dynamic
+policy document fails closed instead of being silently skipped. See the AWS
+[role policy reference](https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-properties-iam-role-policy.html),
+[inline policy resource reference](https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-resource-iam-policy.html),
+and [managed policy reference](https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-resource-iam-managedpolicy.html).
+
 Validate the synthetic example from this directory:
 
 ```bash
