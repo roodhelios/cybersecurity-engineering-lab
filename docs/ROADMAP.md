@@ -34,7 +34,8 @@ The backlog is ordered to produce complete, reviewable systems instead of many d
   intrinsic-function evaluation, trust policies, and effective permissions remain out
   of scope.
 - [ ] Add checks for other infrastructure-as-code formats after a parser is selected.
-- [ ] Add CloudTrail-oriented incident queries using synthetic events.
+- [x] Add bounded CloudTrail-oriented triage rules using synthetic JSON Lines events.
+  Current rules are triage signals, not proof of account compromise.
 - [ ] Create an account-compromise response runbook.
 
 ## Milestone 4: Safe asset intelligence
