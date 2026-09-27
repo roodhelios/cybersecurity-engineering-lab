@@ -57,6 +57,16 @@ The command emits a deterministic summary with the budget, planned cap, remainin
 headroom, resource identifiers, and SHA-256 digest of the reviewed plan. The digest can
 show that a later copy differs, but it does not authenticate who approved the plan.
 
+Review the local synthetic CloudTrail fixture without contacting AWS:
+
+```bash
+PYTHONPATH=src python -m aws_cost_plan.cloudtrail_triage examples/cloudtrail-events.jsonl
+```
+
+The rules flag failed console sign-in, successful console sign-in without explicit
+MFA evidence, CloudTrail logging disruption, and root identity activity. These are
+triage signals that need account context and other telemetry, not proof of compromise.
+
 ## Teardown procedure
 
 Before creating anything, review each resource's termination condition and teardown
