@@ -1,0 +1,2 @@
+{"eventVersion":"1.09","eventTime":"2026-09-27T20:00:00Z","eventSource":"signin.amazonaws.com","eventName":"ConsoleLogin","sourceIPAddress":"192.0.2.10","userIdentity":{"type":"IAMUser","userName":"fixture-analyst"},"responseElements":{"ConsoleLogin":"Success"},"additionalEventData":{"MFAUsed":"No"}}
+{"eventVersion":"1.09","eventTime":"2026-09-27T20:01:00Z","eventSource":"cloudtrail.amazonaws.com","eventName":"StopLogging","sourceIPAddress":"192.0.2.11","userIdentity":{"type":"Root"}}

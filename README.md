@@ -28,6 +28,18 @@ PYTHONPATH=src python -m aegis_threat_model.cli model/threats.json
 python -m unittest discover -s tests -v
 ```
 
+### AWS Cost Plan Guardrail
+
+The cloud-security track begins with an offline validator for an explicit monthly
+budget, alert thresholds, per-resource caps, and teardown evidence. The fixture does
+not create AWS resources or claim that account controls were checked automatically.
+
+```bash
+cd projects/cloud-security/aws-cost-plan
+PYTHONPATH=src python -m aws_cost_plan examples/aws-cost-plan.json
+python -m unittest discover -s tests -v
+```
+
 ## Project tracks
 
 | Track | Starting point | Planned extensions |
