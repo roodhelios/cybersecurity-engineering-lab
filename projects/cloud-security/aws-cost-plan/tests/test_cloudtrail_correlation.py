@@ -10,6 +10,7 @@ from aws_cost_plan.cloudtrail_correlation import (
 
 def failed(minute: int, user="fixture-user", source="192.0.2.10"):
     return {
+        "eventID": f"fixture-{user}-{source}-{minute}",
         "eventTime": f"2026-09-28T20:{minute:02d}:00Z",
         "eventSource": "signin.amazonaws.com",
         "eventName": "ConsoleLogin",
@@ -26,6 +27,7 @@ class CloudTrailCorrelationTests(unittest.TestCase):
         self.assertEqual(len(found), 1)
         self.assertEqual(found[0].failure_count, 3)
         self.assertEqual(found[0].principal, "fixture-user")
+        self.assertEqual(len(found[0].to_dict()["event_ids"]), 3)
 
     def test_events_outside_window_do_not_match(self):
         self.assertEqual(correlate_failed_logins(
@@ -41,6 +43,12 @@ class CloudTrailCorrelationTests(unittest.TestCase):
         del event["sourceIPAddress"]
         with self.assertRaisesRegex(CloudTrailCorrelationError, "sourceIPAddress"):
             correlate_failed_logins([event, event, event])
+
+    def test_duplicate_event_ids_cannot_inflate_count(self):
+        events = [failed(0), failed(1), failed(0)]
+        events[2]["eventID"] = events[0]["eventID"]
+        with self.assertRaisesRegex(CloudTrailCorrelationError, "duplicate eventID"):
+            correlate_failed_logins(events)
 
     def test_bounds_are_enforced_before_processing(self):
         for changes, message in (({"threshold": 1}, "threshold"),
