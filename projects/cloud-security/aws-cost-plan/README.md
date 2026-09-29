@@ -67,6 +67,12 @@ The rules flag failed console sign-in, successful console sign-in without explic
 MFA evidence, CloudTrail logging disruption, and root identity activity. These are
 triage signals that need account context and other telemetry, not proof of compromise.
 
+`cloudtrail_correlation.py` can group failed console sign-ins by principal and source
+address inside a bounded window. The default candidate threshold is three failures in
+five minutes. Missing identity or source keys fail closed, and separate principals or
+sources are never combined. A candidate still requires analyst review and does not
+prove password guessing or account compromise.
+
 ## Teardown procedure
 
 Before creating anything, review each resource's termination condition and teardown
