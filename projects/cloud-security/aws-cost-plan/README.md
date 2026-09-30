@@ -67,6 +67,26 @@ The rules flag failed console sign-in, successful console sign-in without explic
 MFA evidence, CloudTrail logging disruption, and root identity activity. These are
 triage signals that need account context and other telemetry, not proof of compromise.
 
+Correlate repeated failures using a bounded local JSON Lines file:
+
+```bash
+PYTHONPATH=src python -m aws_cost_plan.cloudtrail_correlation_cli \
+  examples/cloudtrail-events.jsonl --threshold 3 --window-seconds 300
+```
+
+The command groups CT001 failures by principal and source address, rejects duplicate
+CloudTrail event IDs, and includes the contributing IDs in each candidate. Input is
+limited to 16 MiB, 20,000 records, and 65,536 characters per record. `--output` writes
+to a new local file and refuses to overwrite one. Empty input is a successful empty
+result. This is a triage aid for supplied data; it does not contact AWS, enrich network
+indicators, or establish that an account was compromised.
+
+`cloudtrail_correlation.py` can group failed console sign-ins by principal and source
+address inside a bounded window. The default candidate threshold is three failures in
+five minutes. Missing identity or source keys fail closed, and separate principals or
+sources are never combined. A candidate still requires analyst review and does not
+prove password guessing or account compromise.
+
 ## Teardown procedure
 
 Before creating anything, review each resource's termination condition and teardown
