@@ -50,7 +50,7 @@ The backlog is ordered to produce complete, reviewable systems instead of many d
 
 - [ ] Turn selected network labs into reproducible, isolated exercises.
 - [ ] Add defensive detections and expected evidence for each exercise.
-- [ ] Create an inert malware behavior-report schema.
+- [x] Create an inert malware behavior-report schema and bounded Python validator.
 - [ ] Add safe YARA exercises using non-malicious fixtures.
 - [ ] Map observed behavior to ATT&CK with confidence and evidence fields.
 

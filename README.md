@@ -51,6 +51,10 @@ python -m unittest discover -s tests -v
 | Network defense | TCP/IP, iptables, IDS/IPS, packet analysis, and attack/defense labs | Reproducible local labs, detection content, PCAP fixtures, and validation scripts |
 | Malware analysis | Static and dynamic analysis with capa, IDA, Procmon, ProcDOT, and FakeNet-NG | Safe metadata parsers, YARA exercises, behavior mapping, and report templates |
 
+The malware-analysis track now has an inert behavior-report schema and a bounded Python
+validator. Its example is synthetic and does not contain or execute a sample. See
+[`projects/malware_analysis/README.md`](projects/malware_analysis/README.md).
+
 ## Engineering rules
 
 - Work only against owned, local, fixture-based, or explicitly authorized targets.
