@@ -52,7 +52,8 @@ The backlog is ordered to produce complete, reviewable systems instead of many d
 - [ ] Add defensive detections and expected evidence for each exercise.
 - [x] Create an inert malware behavior-report schema and bounded Python validator.
 - [ ] Add safe YARA exercises using non-malicious fixtures.
-- [ ] Map observed behavior to ATT&CK with confidence and evidence fields.
+- [x] Map observed behavior to ATT&CK with confidence and evidence fields. Version 2
+  keeps mappings linked to report observations and preserves version 1 compatibility.
 
 ## Definition of done for every pull request
 
