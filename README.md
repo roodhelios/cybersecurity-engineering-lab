@@ -49,8 +49,13 @@ Each project guide documents its setup, interfaces, and limitations.
 
 ## What is still unfinished
 
-The [ordered roadmap](docs/ROADMAP.md) tracks real OPA conformance, cloud incident
-response guidance, and additional isolated network labs. OSINT and network-defense
+The [offline account-response runbook](projects/cloud-security/aws-cost-plan/docs/account-response.md)
+walks through the supplied CloudTrail findings, timeline review, proposed containment,
+and recovery handoff. Its commands make no AWS API calls; live response remains outside
+the validated lab scope.
+
+The [ordered roadmap](docs/ROADMAP.md) tracks real OPA conformance, live validation of
+response procedures, and additional isolated network labs. OSINT and network-defense
 tracks are planned extensions, not completed tools here. Fixture detections and
 analyst confidence fields do not prove compromise or attribution.
 
