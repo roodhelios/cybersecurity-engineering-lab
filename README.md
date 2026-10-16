@@ -1,71 +1,60 @@
 # Cybersecurity Engineering Lab
 
-A living portfolio of small, testable security-engineering systems built from prior coursework, labs, and portfolio experience.
+Python tools for turning security telemetry, authorization decisions, and analysis
+notes into evidence another engineer can reproduce and review.
 
-This repository is an ongoing reimplementation and extension of work across Zero Trust authorization, detection engineering, cloud security, network defense, OSINT, and malware analysis. Each pull request should add evidence that can be reviewed: working code, tests, threat models, architecture decisions, reproducible lab notes, or measured results.
+This repository reimplements and extends prior coursework and lab work. Examples use
+synthetic data and run locally. It does not deploy cloud resources or run malware.
 
-## Current deliverable
+## Choose a working project
 
-### Security Event Normalizer
-
-The first module converts Suricata EVE and Zeek JSON records into one typed event format. It provides a small foundation for later correlation, enrichment, risk scoring, and alert triage work.
-
-```bash
-cd projects/detection-engineering/event-normalizer
-python -m unittest discover -s tests -v
-```
-
-### Aegis Authorization Threat Catalog
-
-The Zero Trust track now starts with a machine-readable threat catalog for signed tool
-requests, replay protection, policy decisions, step-up binding, and audit evidence. The
-Python validator rejects unresolved references and contradictory scope before later
-controls are treated as implemented.
-
-```bash
-cd projects/zero-trust/aegis-threat-model
-PYTHONPATH=src python -m aegis_threat_model.cli model/threats.json
-python -m unittest discover -s tests -v
-```
-
-### AWS Cost Plan Guardrail
-
-The cloud-security track begins with an offline validator for an explicit monthly
-budget, alert thresholds, per-resource caps, and teardown evidence. The fixture does
-not create AWS resources or claim that account controls were checked automatically.
-
-```bash
-cd projects/cloud-security/aws-cost-plan
-PYTHONPATH=src python -m aws_cost_plan examples/aws-cost-plan.json
-python -m unittest discover -s tests -v
-```
-
-## Project tracks
-
-| Track | Starting point | Planned extensions |
+| Project | What you can run | Guide |
 | --- | --- | --- |
-| Detection engineering | Zeek, Suricata, Wazuh, Splunk, and network-security labs | Event normalization, correlation rules, alert tests, and triage metrics |
-| Aegis Zero Trust | FastAPI, OPA, Ed25519 requests, replay protection, and adaptive risk | Policy tests, signed-request verification, audit integrity, and abuse cases |
-| Digital footprint and OSINT | Asset discovery, vulnerability tooling, and risk prioritization | Safe fixture-based discovery, deduplication, scoring, and remediation workflows |
-| AWS security baseline | IAM, MFA, budgets, logging, and defensive cloud controls | Infrastructure-as-code checks, least privilege, cost guardrails, and incident runbooks |
-| Network defense | TCP/IP, iptables, IDS/IPS, packet analysis, and attack/defense labs | Reproducible local labs, detection content, PCAP fixtures, and validation scripts |
-| Malware analysis | Static and dynamic analysis with capa, IDA, Procmon, ProcDOT, and FakeNet-NG | Safe metadata parsers, YARA exercises, behavior mapping, and report templates |
+| Detection engineering | Normalize Suricata and Zeek events, correlate connections, attach conservative ATT&CK candidates | [Event normalizer](projects/detection-engineering/event-normalizer/README.md) |
+| Zero Trust | Verify signed requests, reject replay, evaluate policy fixtures, inspect hash-linked audit records | [Aegis threat model](projects/zero-trust/aegis-threat-model/README.md) |
+| Cloud security | Review offline IAM and CloudFormation policies, triage synthetic CloudTrail events, validate cost plans | [AWS security tools](projects/cloud-security/aws-cost-plan/README.md) |
+| Malware analysis | Validate inert behavior reports and run a pinned YARA training exercise | [Analysis exercises](projects/malware_analysis/README.md) |
 
-The malware-analysis track now has an inert behavior-report schema and a bounded Python
-validator. Its example is synthetic and does not contain or execute a sample. See
-[`projects/malware_analysis/README.md`](projects/malware_analysis/README.md).
+## Try it in two minutes
 
-## Engineering rules
+Use Python 3.11 or newer. From the repository root, normalize the included mixed
+Suricata and Zeek fixture with the standard library:
 
-- Work only against owned, local, fixture-based, or explicitly authorized targets.
-- Never commit credentials, private data, live malware, or unverified claims.
-- Prefer one reviewable improvement over a fixed commit count.
-- Include a test or reproducible validation step with behavioral changes.
-- Record assumptions, limitations, and measured evidence honestly.
-- Open pull requests for review; do not automatically merge them.
+```bash
+PYTHONPATH=projects/detection-engineering/event-normalizer/src python -m event_normalizer \
+  projects/detection-engineering/event-normalizer/tests/fixtures/mixed_events.jsonl
+```
 
-See [the roadmap](docs/ROADMAP.md) for the ordered backlog and [AGENTS.md](AGENTS.md) for the daily-development guardrails.
+The command writes two JSON Lines records. The first has `source: suricata`,
+`protocol: TCP`, and `dest_port: 443`. The second has `source: zeek`,
+`protocol: udp`, and `dest_port: 53`. Each retains its original record in `raw`.
 
-## Status
+Validate a synthetic behavior report without installing or running a sample:
 
-Active development. Interfaces and project structure may change while the first milestones are completed.
+```bash
+python projects/malware_analysis/report_validator.py \
+  projects/malware_analysis/examples/synthetic-behavior-report-v2.json
+```
+
+## Validate a project
+
+```bash
+python -m unittest discover -s projects/detection-engineering/event-normalizer/tests -v
+python -m unittest discover -s projects/malware_analysis/tests -v
+```
+
+Ed25519 exercises require PyNaCl. Real OPA conformance and YARA execution require
+their respective binaries. A skipped integration test does not establish tool execution.
+Each project guide documents its setup, interfaces, and limitations.
+
+## What is still unfinished
+
+The [ordered roadmap](docs/ROADMAP.md) tracks real OPA conformance, cloud incident
+response guidance, and additional isolated network labs. OSINT and network-defense
+tracks are planned extensions, not completed tools here. Fixture detections and
+analyst confidence fields do not prove compromise or attribution.
+
+Use only owned, synthetic, or explicitly authorized data. Keep credentials and live
+malware out of Git. Submit a PR with a reproducible example and relevant validation.
+See [AGENTS.md](AGENTS.md) and [repository strategy](docs/decisions/0001-repository-strategy.md).
+Implementation has been extended with assistant support.
