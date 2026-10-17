@@ -53,6 +53,8 @@ The [offline account-response runbook](projects/cloud-security/aws-cost-plan/doc
 walks through the supplied CloudTrail findings, timeline review, proposed containment,
 and recovery handoff. Its commands make no AWS API calls; live response remains outside
 the validated lab scope.
+The runbook also includes a runnable handoff exporter with an input digest and
+line-linked timeline. Its output keeps containment and recovery explicitly unverified.
 
 The [ordered roadmap](docs/ROADMAP.md) tracks real OPA conformance, live validation of
 response procedures, and additional isolated network labs. OSINT and network-defense

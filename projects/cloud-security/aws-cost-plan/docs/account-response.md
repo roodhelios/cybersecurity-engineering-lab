@@ -38,6 +38,29 @@ CT003 and CT004 describe the same event. Do not count them as two independent at
 MFAUsed without Yes is insufficient MFA evidence in this fixture rule; it does not
 establish that a user lacks MFA enrollment or that every federated session is unsafe.
 
+Create a structured handoff from the same fixture without taking response actions:
+
+```bash
+PYTHONPATH=projects/cloud-security/aws-cost-plan/src python -m aws_cost_plan.cloudtrail_handoff \
+  projects/cloud-security/aws-cost-plan/examples/cloudtrail-events.jsonl \
+  --case-id synthetic-001 --scope-note "Synthetic fixture only, no live account" \
+  --output /tmp/cloudtrail-handoff.json
+```
+
+The new private JSON file reports `event_count: 2`, `finding_count: 3`, and
+`flagged_event_count: 2`. The UTC timeline keeps original line numbers and groups
+multiple signals on their source event. `source_sha256` covers the exact input bytes;
+preserve those bytes separately to reproduce the review. Raw identities and addresses
+are not copied into the handoff. Scope is a supplied note, not verified authorization.
+
+The case remains `unreviewed`, with `containment: not_performed` and
+`recovery: not_verified`, even if no rule matches. Exit 0 means a handoff was built,
+not that the account is safe. Exit 2 means validation or publication failed. Existing
+output paths are never replaced. Inputs are limited to 16 MiB, 20,000 records, and
+65,536 characters per line. File publication requires local hard-link support and
+does not establish crash durability. Keep case metadata and outputs outside Git;
+never put credentials in the case ID or scope note.
+
 ## 3. Build a timeline and check alternatives
 
 Keep the event time, event name, identity, source address, original line number, and
