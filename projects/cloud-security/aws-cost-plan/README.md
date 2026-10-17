@@ -89,6 +89,12 @@ prove password guessing or account compromise.
 
 ## Teardown procedure
 
+For a complete offline response exercise, follow the
+[account-response runbook](docs/account-response.md). Its `cloudtrail_handoff` command
+preserves the exact input digest, line-linked timeline, event and finding counts,
+and explicit unreviewed response state in a new private JSON file. It does not call
+AWS or certify containment and recovery.
+
 Before creating anything, review each resource's termination condition and teardown
 steps. When the lab ends, perform the steps in order, complete the stated verification,
 and inspect AWS billing and Cost Explorer through the owned account. The fixture uses

@@ -36,7 +36,8 @@ The backlog is ordered to produce complete, reviewable systems instead of many d
 - [ ] Add checks for other infrastructure-as-code formats after a parser is selected.
 - [x] Add bounded CloudTrail-oriented triage rules using synthetic JSON Lines events.
   Current rules are triage signals, not proof of account compromise.
-- [ ] Create an account-compromise response runbook.
+- [x] Create an offline account-compromise triage and response-planning runbook.
+  Local fixture commands are validated; live containment and recovery remain untested.
 
 ## Milestone 4: Safe asset intelligence
 
