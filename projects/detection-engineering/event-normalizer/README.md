@@ -49,8 +49,24 @@ candidate because a single failed connection does not prove scanning.
 
 ## Correlate repeated attempts
 
-The Python API can group repeated Zeek `S0` connections from one source inside a
-bounded time window:
+Run the included inert Zeek fixture through normalization and correlation:
+
+```bash
+PYTHONPATH=src python -m event_normalizer.correlation_cli tests/fixtures/repeated_attempts.jsonl
+```
+
+The JSON report contains `events_read: 4`, `finding_count: 1`, and one medium-confidence
+T1046 candidate for source `192.0.2.10` with four attempts against four target pairs.
+It contains no raw records. No packets or network requests are sent. Standard input
+is supported when the path is omitted or `-`; redirect stdout to retain the report.
+
+The command validates the whole batch before printing a report. Invalid input exits
+2 with a source name and line number, without a partial success report. Batches are
+limited to 10,000 non-empty events and lines to 1 Mi characters, including the newline.
+This is an in-memory analyst tool, not a high-volume streaming collector. Source and
+destination addresses can still be sensitive; keep real reports outside Git.
+
+The Python API also groups repeated Zeek `S0` connections from one source:
 
 ```python
 from event_normalizer import correlate_repeated_attempts
@@ -105,9 +121,10 @@ print(event.to_dict())
 
 - ATT&CK output contains investigation candidates, not confirmed attacker behavior.
 - The mapper recognizes a small allowlist of technique IDs and ignores unknown IDs.
-- Correlation currently covers Zeek `conn` records with the exact `S0` and `S` evidence
+- Correlation covers Zeek `conn` records and the normalizer's `connection` fallback
+  when `_path` and `log_type` are absent, with the exact `S0` and `S` evidence
   pair. It does not infer intent or inspect packet payloads.
-- Correlation is an in-memory batch API. Input retention and high-volume streaming are
+- Correlation is an in-memory batch API and CLI. High-volume streaming is
   not implemented yet.
 - Only a small common field set is mapped; vendor-specific data remains in `raw`.
 - The command processes one JSON value per line and does not currently enforce a maximum line size.

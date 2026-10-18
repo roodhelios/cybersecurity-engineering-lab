@@ -1,0 +1,4 @@
+{"ts":1789408800,"uid":"fixture-1","id.orig_h":"192.0.2.10","id.orig_p":51000,"id.resp_h":"198.51.100.20","id.resp_p":22,"proto":"tcp","conn_state":"S0","history":"S"}
+{"ts":1789408810,"uid":"fixture-2","id.orig_h":"192.0.2.10","id.orig_p":51001,"id.resp_h":"198.51.100.20","id.resp_p":80,"proto":"tcp","conn_state":"S0","history":"S"}
+{"ts":1789408820,"uid":"fixture-3","id.orig_h":"192.0.2.10","id.orig_p":51002,"id.resp_h":"198.51.100.20","id.resp_p":443,"proto":"tcp","conn_state":"S0","history":"S"}
+{"ts":1789408830,"uid":"fixture-4","id.orig_h":"192.0.2.10","id.orig_p":51003,"id.resp_h":"198.51.100.20","id.resp_p":8080,"proto":"tcp","conn_state":"S0","history":"S"}

@@ -61,7 +61,7 @@ class ConnectionCorrelation:
 def _incomplete_syn(event: NormalizedEvent) -> bool:
     return (
         event.source == "zeek"
-        and event.event_type == "conn"
+        and event.event_type in {"conn", "connection"}
         and event.raw.get("conn_state") == "S0"
         and event.raw.get("history") == "S"
         and bool(event.src_ip)
