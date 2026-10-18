@@ -29,6 +29,17 @@ The command writes two JSON Lines records. The first has `source: suricata`,
 `protocol: TCP`, and `dest_port: 443`. The second has `source: zeek`,
 `protocol: udp`, and `dest_port: 53`. Each retains its original record in `raw`.
 
+Correlate a synthetic batch into an investigation report:
+
+```bash
+PYTHONPATH=projects/detection-engineering/event-normalizer/src python -m event_normalizer.correlation_cli \
+  projects/detection-engineering/event-normalizer/tests/fixtures/repeated_attempts.jsonl
+```
+
+Expect four events and one medium-confidence T1046 candidate. This is a local
+connection-pattern review, not proof of scanning or compromise. The command bounds
+batch size and emits no success report when any input line is invalid.
+
 Validate a synthetic behavior report without installing or running a sample:
 
 ```bash
