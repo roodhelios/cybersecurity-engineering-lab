@@ -127,6 +127,30 @@ event = normalize_event(
 print(event.to_dict())
 ```
 
+## Reproduce a saved correlation report
+
+From this project directory, save the evidence-bearing report and check it in a
+separate process using only Python's standard library:
+
+```bash
+PYTHONPATH=src python -m event_normalizer.correlation_cli tests/fixtures/repeated_attempts.jsonl \
+  --include-evidence > /tmp/correlation-review.json
+PYTHONPATH=src python -m event_normalizer.evidence_verify tests/fixtures/repeated_attempts.jsonl \
+  /tmp/correlation-review.json
+```
+
+Expect `status: reproduced`, `events_read: 4`, `finding_count: 1`, and
+`evidence_references: 4`. Keep authorized input and redirected reports private and
+outside Git. The shell redirection above can replace an existing file; choose a new
+path. Verification does not write either input. It requires the complete version 2
+report, including finding fields, counts, ordering, source lines, and event digests.
+JSON key order and whitespace inside a line may differ, but inserted blank lines
+change source references. Version 1, duplicate report fields, unknown or changed
+fields, malformed input, and reports exceeding 16 MiB fail with exit 2 and no success
+document. Existing correlation batch limits still apply. Empty batches can reproduce
+with zero findings. Reproduction establishes consistency with this implementation,
+not independent detection accuracy, authentic source data, or proof of compromise.
+
 ## Limitations
 
 - ATT&CK output contains investigation candidates, not confirmed attacker behavior.
@@ -137,6 +161,8 @@ print(event.to_dict())
 - Correlation is an in-memory batch API and CLI. High-volume streaming is
   not implemented yet.
 - Only a small common field set is mapped; vendor-specific data remains in `raw`.
-- The command processes one JSON value per line and does not currently enforce a maximum line size.
-- Fail-fast errors can leave an output file containing the successfully processed prefix.
+- The normalization command processes one JSON value per line without a maximum
+  line size. Its fail-fast errors can leave an output file containing the successfully
+  processed prefix. The separate correlation command has batch and line limits and
+  does not emit a partial success report.
 - No external systems are contacted.
