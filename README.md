@@ -39,6 +39,9 @@ PYTHONPATH=projects/detection-engineering/event-normalizer/src python -m event_n
 Expect four events and one medium-confidence T1046 candidate. This is a local
 connection-pattern review, not proof of scanning or compromise. The command bounds
 batch size and emits no success report when any input line is invalid.
+Add `--include-evidence` for report version 2 with the supporting input line
+numbers and canonical event digests. Retain the original file to review those lines;
+digests do not authenticate the source.
 
 Validate a synthetic behavior report without installing or running a sample:
 

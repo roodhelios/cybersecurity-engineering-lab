@@ -105,6 +105,8 @@ class CorrelationTests(unittest.TestCase):
         reverse = [item.to_dict() for item in correlate_repeated_attempts(reversed(events))]
 
         self.assertEqual(forward, reverse)
+        self.assertEqual(correlate_repeated_attempts(events),
+                         correlate_repeated_attempts(reversed(events)))
 
     def test_rejects_impossible_thresholds(self) -> None:
         with self.assertRaisesRegex(ValueError, "cannot exceed"):

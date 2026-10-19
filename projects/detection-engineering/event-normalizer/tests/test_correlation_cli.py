@@ -18,6 +18,46 @@ FIXTURE = Path(__file__).parent / "fixtures" / "repeated_attempts.jsonl"
 
 
 class CorrelationCliTests(unittest.TestCase):
+    def test_evidence_tracks_nonempty_source_lines_and_omits_completed_connections(self):
+        rows = FIXTURE.read_text().splitlines()
+        completed = json.loads(rows[0])
+        completed["conn_state"] = "SF"
+        completed["history"] = "ShADadFf"
+        text = "\n" + rows[0] + "\n" + json.dumps(completed) + "\n\n" + "\n".join(rows[1:])
+        result = correlate_jsonl(StringIO(text), include_evidence=True)
+        self.assertEqual(result["schema_version"], 2)
+        evidence = result["findings"][0]["evidence"]
+        self.assertEqual([item["line_number"] for item in evidence], [2, 5, 6, 7])
+        self.assertTrue(all(len(item["event_sha256"]) == 64 for item in evidence))
+        self.assertNotIn("evidence", correlate_jsonl(StringIO(text))["findings"][0])
+
+    def test_evidence_follows_time_order_and_retains_duplicate_records(self):
+        rows = FIXTURE.read_text().splitlines()
+        result = correlate_jsonl(StringIO("\n".join(reversed(rows)) + "\n" + rows[0]),
+                                 include_evidence=True)
+        evidence = result["findings"][0]["evidence"]
+        self.assertEqual([item["line_number"] for item in evidence], [4, 5, 3, 2, 1])
+        self.assertEqual(evidence[0]["event_sha256"], evidence[1]["event_sha256"])
+
+    def test_evidence_digest_ignores_json_layout_but_detects_record_changes(self):
+        rows = FIXTURE.read_text().splitlines()
+        baseline = correlate_jsonl(StringIO("\n".join(rows)), include_evidence=True)
+        reformatted = [json.dumps(json.loads(row), sort_keys=True) for row in rows]
+        same = correlate_jsonl(StringIO("\n".join(reformatted)), include_evidence=True)
+        self.assertEqual(baseline["findings"], same["findings"])
+        changed = json.loads(rows[0])
+        changed["uid"] = "different-synthetic-event"
+        rows[0] = json.dumps(changed)
+        result = correlate_jsonl(StringIO("\n".join(rows)), include_evidence=True)
+        self.assertNotEqual(baseline["findings"][0]["evidence"][0]["event_sha256"],
+                            result["findings"][0]["evidence"][0]["event_sha256"])
+
+    def test_cli_explicitly_selects_the_evidence_contract(self):
+        output = StringIO()
+        with redirect_stdout(output):
+            self.assertEqual(main([str(FIXTURE), "--include-evidence"]), 0)
+        self.assertEqual(json.loads(output.getvalue())["schema_version"], 2)
+
     def test_file_command_reports_candidate_without_raw_records(self):
         output = StringIO()
         with redirect_stdout(output):
