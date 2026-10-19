@@ -66,6 +66,16 @@ limited to 10,000 non-empty events and lines to 1 Mi characters, including the n
 This is an in-memory analyst tool, not a high-volume streaming collector. Source and
 destination addresses can still be sensitive; keep real reports outside Git.
 
+Add `--include-evidence` to emit report version 2. Each finding then lists only the
+supporting records, with their one-based input line numbers and `event_sha256`.
+Blank lines still count toward line numbers; completed connections are excluded.
+References follow the finding's timestamp/target order and retain duplicate records.
+The digest covers the original parsed JSON event, serialized as sorted UTF-8 JSON
+with compact separators and finite numbers. JSON whitespace and key order do not
+affect it. It is not a byte digest of the source file or proof of authenticity.
+Keep the original input for review. The default version 1 report and the API's
+`to_dict()` output remain unchanged; API objects expose zero-based `event_indices`.
+
 The Python API also groups repeated Zeek `S0` connections from one source:
 
 ```python

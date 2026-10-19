@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from datetime import timedelta
 from typing import Any, Iterable
 
@@ -42,6 +42,7 @@ class ConnectionCorrelation:
     tactic: str = "Discovery"
     confidence: str = "medium"
     rule_id: str = "zeek-repeated-incomplete-syn"
+    event_indices: tuple[int, ...] = field(default=(), compare=False)
 
     def to_dict(self) -> dict[str, Any]:
         return {
@@ -84,31 +85,31 @@ def correlate_repeated_attempts(
     """Return deterministic, non-overlapping windows of repeated failed SYNs."""
 
     settings = config or CorrelationConfig()
-    by_source: dict[str, list[NormalizedEvent]] = {}
-    for event in events:
+    by_source: dict[str, list[tuple[int, NormalizedEvent]]] = {}
+    for index, event in enumerate(events):
         if _incomplete_syn(event):
             assert event.src_ip is not None
-            by_source.setdefault(event.src_ip, []).append(event)
+            by_source.setdefault(event.src_ip, []).append((index, event))
 
     findings: list[ConnectionCorrelation] = []
     window_size = timedelta(seconds=settings.window_seconds)
     for source_ip, attempts in sorted(by_source.items()):
         ordered = sorted(
             attempts,
-            key=lambda event: (event.timestamp, _target(event)),
+            key=lambda item: (item[1].timestamp, _target(item[1])),
         )
         start_index = 0
         while start_index < len(ordered):
             end_index = start_index
             while (
                 end_index < len(ordered)
-                and ordered[end_index].timestamp - ordered[start_index].timestamp
+                and ordered[end_index][1].timestamp - ordered[start_index][1].timestamp
                 <= window_size
             ):
                 end_index += 1
 
             window = ordered[start_index:end_index]
-            targets = tuple(sorted({_target(event) for event in window}))
+            targets = tuple(sorted({_target(event) for _, event in window}))
             if (
                 len(window) >= settings.min_attempts
                 and len(targets) >= settings.min_distinct_targets
@@ -116,10 +117,11 @@ def correlate_repeated_attempts(
                 findings.append(
                     ConnectionCorrelation(
                         source_ip=source_ip,
-                        window_start=window[0].timestamp.isoformat(),
-                        window_end=window[-1].timestamp.isoformat(),
+                        window_start=window[0][1].timestamp.isoformat(),
+                        window_end=window[-1][1].timestamp.isoformat(),
                         attempt_count=len(window),
                         distinct_targets=targets,
+                        event_indices=tuple(index for index, _ in window),
                     )
                 )
                 start_index = end_index
