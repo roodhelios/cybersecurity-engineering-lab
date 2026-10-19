@@ -8,7 +8,7 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Any, Sequence
 
-from .policy import PolicyCase, PolicyDecision
+from .policy import PolicyCase, PolicyDecision, PolicyInput
 
 
 OPA_QUERY = "data.aegis.authorization.decision"
@@ -47,22 +47,22 @@ def _decision_from_result(value: Any) -> PolicyDecision:
         raise OpaConformanceError("OPA decision must contain effect and reason only")
     effect = decision["effect"]
     reason = decision["reason"]
-    if effect not in {"allow", "deny", "step_up"}:
+    if not isinstance(effect, str) or effect not in {"allow", "deny", "step_up"}:
         raise OpaConformanceError("OPA decision effect is not supported")
     if not isinstance(reason, str) or not reason.strip():
         raise OpaConformanceError("OPA decision reason must be a non-empty string")
     return PolicyDecision(effect=effect, reason=reason.strip())
 
 
-def evaluate_case_with_opa(
-    case: PolicyCase,
+def evaluate_input_with_opa(
+    policy_input: PolicyInput,
     *,
     rego_path: str | Path,
     data_path: str | Path,
     opa_binary: str | Path = "opa",
     timeout_seconds: float = 5.0,
 ) -> PolicyDecision:
-    """Evaluate one case using OPA without a server or network request."""
+    """Evaluate one validated policy input without starting an OPA server."""
 
     if not isinstance(timeout_seconds, (int, float)) or timeout_seconds <= 0:
         raise OpaConformanceError("timeout_seconds must be positive")
@@ -80,7 +80,7 @@ def evaluate_case_with_opa(
     try:
         completed = subprocess.run(
             command,
-            input=json.dumps(case.policy_input.to_dict(), sort_keys=True),
+            input=json.dumps(policy_input.to_dict(), sort_keys=True),
             capture_output=True,
             check=False,
             text=True,
@@ -102,6 +102,15 @@ def evaluate_case_with_opa(
     except json.JSONDecodeError as exc:
         raise OpaConformanceError("OPA output was not valid JSON") from exc
     return _decision_from_result(value)
+
+
+def evaluate_case_with_opa(
+    case: PolicyCase, *, rego_path: str | Path, data_path: str | Path,
+    opa_binary: str | Path = "opa", timeout_seconds: float = 5.0,
+) -> PolicyDecision:
+    """Preserve the fixture interface while sharing native input evaluation."""
+    return evaluate_input_with_opa(case.policy_input, rego_path=rego_path,
+        data_path=data_path, opa_binary=opa_binary, timeout_seconds=timeout_seconds)
 
 
 def run_opa_cases(

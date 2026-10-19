@@ -3,9 +3,9 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
-from typing import Any, Literal
+from typing import Any, Literal, Callable
 
-from .policy import PolicyData, PolicyInput, decide
+from .policy import PolicyData, PolicyInput, PolicyDecision, decide
 from .verification import (
     AgentCredential,
     NonceStore,
@@ -45,6 +45,7 @@ def authorize_signed_request(
     now: int,
     max_skew_seconds: int = 60,
     nonce_ttl_seconds: int = 300,
+    policy_evaluator: Callable[[PolicyInput], PolicyDecision] | None = None,
 ) -> AuthorizationDecision:
     """Fail closed at verification before evaluating least-privilege policy."""
 
@@ -72,7 +73,8 @@ def authorize_signed_request(
             key_version=verified.key_version,
         )
 
-    policy_decision = decide(policy, policy_input)
+    policy_decision = (decide(policy, policy_input) if policy_evaluator is None
+                       else policy_evaluator(policy_input))
     return AuthorizationDecision(
         effect=policy_decision.effect,
         reason=policy_decision.reason,

@@ -66,7 +66,10 @@ python -m unittest discover -s projects/detection-engineering/event-normalizer/t
 python -m unittest discover -s projects/malware_analysis/tests -v
 ```
 
-Ed25519 exercises require PyNaCl. Real OPA conformance and YARA execution require
+The Aegis Ed25519 exercises require `cryptography`, declared in their project package.
+Native policy mode is now validated against OPA 1.21.2; see the
+[reproduction guide](projects/zero-trust/aegis-threat-model/docs/OPA_VALIDATION.md).
+Real OPA conformance and YARA execution require
 their respective binaries. A skipped integration test does not establish tool execution.
 Each project guide documents its setup, interfaces, and limitations.
 
@@ -79,7 +82,7 @@ the validated lab scope.
 The runbook also includes a runnable handoff exporter with an input digest and
 line-linked timeline. Its output keeps containment and recovery explicitly unverified.
 
-The [ordered roadmap](docs/ROADMAP.md) tracks real OPA conformance, live validation of
+The [ordered roadmap](docs/ROADMAP.md) records local OPA conformance and tracks live validation of
 response procedures, and additional isolated network labs. OSINT and network-defense
 tracks are planned extensions, not completed tools here. Fixture detections and
 analyst confidence fields do not prove compromise or attribution.

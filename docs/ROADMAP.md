@@ -18,9 +18,10 @@ The backlog is ordered to produce complete, reviewable systems instead of many d
 
 - [x] Write a scoped threat model for tool-using AI agents.
 - [x] Implement signed request verification with timestamp and nonce validation.
-- [ ] Create OPA policies for least-privilege tool access. A Rego draft and Python
-  fixture oracle exist. The OPA conformance runner is ready, but a run with an actual
-  OPA release is still required.
+- [x] Create OPA policies for least-privilege tool access. Native OPA 1.21.2 agrees
+  with all eight reviewed fixtures and passes the combined signature/policy regression
+  suite. See the recorded binary and policy digests in the Aegis validation guide.
+  This establishes local conformance, not a deployed OPA service or exhaustive proof.
 - [x] Add replay, privilege-escalation, malformed-signature, and clock-skew tests.
 - [x] Produce an append-only audit record format and integrity checks.
 

@@ -2,7 +2,8 @@
 
 This module is a portfolio-lab reimplementation of the authorization boundary behind
 an AI tool proxy. It began with a machine-readable threat catalog and now verifies
-local Ed25519 request fixtures before later policy work is added.
+local Ed25519 request fixtures and supports either a Python policy oracle or an
+explicitly selected native OPA evaluator.
 
 The catalog covers signed tool requests, agent status and active keys, replay controls,
 OPA decisions, step-up binding, and audit evidence. Model training, prompt safety,
@@ -41,7 +42,7 @@ need an atomic shared store.
 
 ## Review the OPA policy contract
 
-`policy/aegis.rego` is a Rego v1 policy draft for explicit role-to-tool access,
+`policy/aegis.rego` is a Rego v1 policy for explicit role-to-tool access,
 deny-by-default behavior, and risk-based step-up on high-sensitivity tools. Its data and
 eight synthetic cases are versioned beside it.
 
@@ -71,8 +72,9 @@ PYTHONPATH=src python -m aegis_threat_model.opa_conformance_cli \
 The runner sends each fixture to `opa eval`, validates the returned decision shape, and
 reports every mismatch. Unit tests use a local fake executable to test process, parsing,
 and failure behavior. An additional integration test runs only when `opa` is present.
-The roadmap item remains incomplete until that integration test passes with an actual
-OPA release.
+Native OPA 1.21.2 now matches all eight reviewed cases. The installed-OPA integration
+test and combined authorization regressions also passed. See the exact binary and
+policy digests, commands, and limitations in [validation evidence](docs/OPA_VALIDATION.md).
 
 ## Exercise the combined authorization boundary
 
@@ -92,6 +94,25 @@ Cross-control tests cover replay, malformed signatures, past and future clock sk
 signed role escalation, and high-risk step-up behavior. Verification failures never
 reach policy evaluation. A request that passes signature checks can still be denied or
 held for step-up by the least-privilege policy.
+
+To use the real evaluator in this combined path, supply both native options:
+
+```bash
+PYTHONPATH=src python -m aegis_threat_model.authorization_cli \
+  --request examples/signed-request.json --credential examples/credential.json \
+  --policy policy/data.json --risk-score 20 --now 1789686000 \
+  --opa /tmp/opa-1.21.2 --rego policy/aegis.rego
+```
+
+After acquiring the checked binary described in the validation guide, expect
+`effect: allow`, `stage: policy`, and `policy_engine: opa`. The existing default still
+uses the Python oracle and retains its output contract. When native mode is selected,
+invalid signatures and replay stop before OPA, with `policy_engine: not_evaluated`.
+Missing executables, evaluation failures, and malformed decisions fail with exit 2
+and no success document. There is no fallback to the oracle. A policy denial or
+step-up decision returns exit 1. Nonces are in memory; a policy outage can consume
+the current request nonce, so retries need a fresh signed request. Only run trusted
+local Rego and data files. This is not a sandbox for untrusted OPA policies.
 
 ## Verify append-only audit evidence
 
@@ -117,19 +138,19 @@ whole file can replace both the records and their hashes.
 
 ## What the evidence fields mean
 
-The signature and replay evidence entries point to implemented tests. Policy, step-up,
-and audit evidence remains marked as planned. The catalog is the review contract those
-later controls will need to satisfy.
+Signature, replay, and policy evidence entries point to implemented tests. Other
+catalog entries still describe planned evidence; do not infer production step-up,
+audit redaction, or deployment guarantees from the native policy check.
 
 ## Current limitations
 
 - Verification uses an in-memory nonce store and does not prove distributed replay
   safety.
 - Canonical request bytes use documented Python JSON serialization, not RFC 8785.
-- Policy fixtures pass a Python reference evaluator. The OPA conformance runner is
-  ready, but Rego-native execution has not been run in this environment.
-- The combined authorization harness uses the Python policy oracle until native OPA
-  conformance is established.
+- Eight policy fixtures agree with native OPA 1.21.2. This is bounded conformance,
+  not proof that every policy input or OPA version behaves identically.
+- The combined harness defaults to the Python oracle; native execution is opt-in
+  and uses a subprocess, not a deployed OPA server.
 - Hash links expose edits within a retained audit file, but they do not protect against
   whole-file replacement without an independently stored head hash.
 - STRIDE categories organize review but do not prove that every possible abuse case is
@@ -140,7 +161,6 @@ later controls will need to satisfy.
 
 ## Next step
 
-Run the opt-in conformance test with an installed OPA release and record the version.
-Mark the least-privilege policy milestone complete only if both evaluators agree. Then
-use the same combined regression cases against the native policy result. After that,
-begin the AWS security baseline with a zero-surprise cost and teardown model.
+Expand boundary and malformed-input cases before changing the policy or OPA version.
+Service deployment, distributed nonce storage, and independent step-up verification
+remain outside the local native-policy evidence.
