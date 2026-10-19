@@ -101,7 +101,7 @@
     },
     {
       "id": "evidence:policy-tests",
-      "description": "Fixture cases cover allow, deny, and step-up decisions through a Python oracle; Rego-native OPA execution remains planned"
+      "description": "Eight fixtures agree with native OPA 1.21.2; tests/test_opa_conformance.py and tests/test_native_authorization.py cover real policy execution and combined signed-request boundaries"
     },
     {
       "id": "evidence:binding-tests",
