@@ -43,6 +43,11 @@ Add `--include-evidence` for report version 2 with the supporting input line
 numbers and canonical event digests. Retain the original file to review those lines;
 digests do not authenticate the source.
 
+Review a saved version 2 report against its retained input with
+`python -m event_normalizer.evidence_verify INPUT.jsonl REPORT.json` and the same
+`PYTHONPATH` above. The verifier recomputes findings and all references, not just
+digests. See the project guide for the complete save-and-verify example.
+
 Validate a synthetic behavior report without installing or running a sample:
 
 ```bash
