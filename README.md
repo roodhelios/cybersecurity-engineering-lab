@@ -63,6 +63,20 @@ Already have a local CloudTrail `Records` JSON or gzip export? The
 [native-file import guide](projects/cloud-security/aws-cost-plan/README.md#import-a-local-cloudtrail-records-file)
 converts it to private JSON Lines for triage and response planning without contacting AWS.
 
+Review changes between two inert malware-analysis reports without running a sample:
+
+```bash
+python -m projects.malware_analysis.report_diff \
+  projects/malware_analysis/examples/synthetic-behavior-report-v1.json \
+  projects/malware_analysis/examples/synthetic-behavior-report-v2.json
+```
+
+The included reports claim the same sample and observations. Expect no observation
+changes and `attack_mappings.status: not_comparable`: version 1 did not record that
+collection. For two version 2 reports, the tool also identifies mappings that need
+review because their linked observations changed. See the
+[comparison contract](projects/malware_analysis/README.md#compare-analysis-revisions).
+
 ## Validate a project
 
 ```bash
