@@ -87,6 +87,42 @@ five minutes. Missing identity or source keys fail closed, and separate principa
 sources are never combined. A candidate still requires analyst review and does not
 prove password guessing or account compromise.
 
+## Import a local CloudTrail Records file
+
+AWS documents delivered log files as gzip-compressed JSON with a `Records` array:
+[CloudTrail file examples](https://docs.aws.amazon.com/awscloudtrail/latest/userguide/cloudtrail-log-file-examples.html).
+The existing commands consume JSON Lines, not that envelope. Convert one already
+downloaded, owned or authorized file locally before triage. From this project directory:
+
+```bash
+PYTHONPATH=src python -m aws_cost_plan.cloudtrail_import examples/cloudtrail-records.json \
+  --output /tmp/cloudtrail-import.jsonl
+PYTHONPATH=src python -m aws_cost_plan.cloudtrail_handoff /tmp/cloudtrail-import.jsonl \
+  --case-id native-import-review --scope-note synthetic --output /tmp/cloudtrail-import-handoff.json
+```
+
+Use fresh output paths on POSIX. The importer reports `event_count: 2`, the exact input
+digest, normalized-output digest, and compression mode. The handoff shows two events,
+three triage findings, `containment: not_performed`, and `recovery: not_verified`.
+The same importer recognizes gzip by its magic bytes, independent of filename. It
+does not download files, load AWS credentials, or call an API.
+
+The full batch is validated before publication. Both supplied and expanded bytes
+are capped at 16 MiB, with at most 20,000 events and 65,536 characters per normalized
+record. Each event must satisfy the current triage contract and have a unique non-empty
+`eventID`. Duplicate JSON fields, non-finite numbers, malformed gzip/UTF-8, unexpected
+envelope fields, and invalid records fail with exit 2 and no success document or new
+output. Empty `Records` creates an empty JSONL file. Output is a complete private
+file published exclusively; existing files are never overwritten.
+
+Unknown event fields and original order are preserved, not interpreted or redacted.
+Logs can contain credentials or sensitive identifiers. Keep both original and converted
+files private and outside Git. Receipt digests are integrity references, not CloudTrail
+log-signature validation, provenance, or authorization proof. Handoff line numbers refer
+to the converted file: retain that file and both digests alongside the original.
+This accepts the reviewed local subset, not every AWS event variant or CloudTrail Lake
+export. Passing import does not prove that a record is authentic or a finding correct.
+
 ## Teardown procedure
 
 For a complete offline response exercise, follow the
