@@ -59,6 +59,10 @@ python projects/malware_analysis/report_validator.py \
   projects/malware_analysis/examples/synthetic-behavior-report-v2.json
 ```
 
+Already have a local CloudTrail `Records` JSON or gzip export? The
+[native-file import guide](projects/cloud-security/aws-cost-plan/README.md#import-a-local-cloudtrail-records-file)
+converts it to private JSON Lines for triage and response planning without contacting AWS.
+
 ## Validate a project
 
 ```bash

@@ -1,0 +1,24 @@
+{
+  "Records": [
+    {
+      "eventVersion": "1.09",
+      "eventID": "synthetic-import-1",
+      "eventTime": "2026-10-19T00:00:00Z",
+      "eventSource": "signin.amazonaws.com",
+      "eventName": "ConsoleLogin",
+      "sourceIPAddress": "192.0.2.10",
+      "userIdentity": {"type": "IAMUser", "userName": "fixture-analyst"},
+      "responseElements": {"ConsoleLogin": "Success"},
+      "additionalEventData": {"MFAUsed": "No"}
+    },
+    {
+      "eventVersion": "1.09",
+      "eventID": "synthetic-import-2",
+      "eventTime": "2026-10-19T00:01:00Z",
+      "eventSource": "cloudtrail.amazonaws.com",
+      "eventName": "StopLogging",
+      "sourceIPAddress": "192.0.2.11",
+      "userIdentity": {"type": "Root"}
+    }
+  ]
+}
