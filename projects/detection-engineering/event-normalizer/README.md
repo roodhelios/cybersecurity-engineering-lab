@@ -9,6 +9,42 @@ A dependency-free Python module that converts selected Suricata EVE and Zeek JSO
 
 The parser intentionally rejects unknown shapes instead of silently guessing. Original records are retained in the normalized object for later evidence and troubleshooting.
 
+## Import a Zeek text connection log
+
+Zeek commonly writes tab-separated logs with `#separator`, `#fields`, and `#types`
+headers. A text `conn.log` cannot be passed directly to the JSON parser. From this
+project directory, convert the included synthetic log first:
+
+```bash
+PYTHONPATH=src python -m event_normalizer.zeek_tsv tests/fixtures/repeated_attempts.log \
+  > /tmp/zeek-review.jsonl
+PYTHONPATH=src python -m event_normalizer.correlation_cli /tmp/zeek-review.jsonl --include-evidence
+```
+
+Expect four imported events and one medium-confidence T1046 candidate. No Zeek
+process, packet capture, or network request runs. Choose a fresh private output path;
+shell redirection can overwrite existing files. Retain the text log as well as the
+converted file. Evidence references identify converted JSONL lines; each converted
+record also includes `_zeek_tsv_line` pointing to its original text-log line. Report
+digests cover converted records, not the original text-log bytes.
+
+This is a connection subset importer, not a lossless general Zeek reader. It requires
+`#path conn`, tab separation, and matching field/type headers for `ts`, `uid`,
+`id.orig_h`, `id.orig_p`, `id.resp_h`, `id.resp_p`, `proto`, `conn_state`, and `history`.
+Columns may be reordered; extra columns are deliberately discarded. Selected text
+fields support printable ASCII and hexadecimal `\xHH` escapes. Unset state/history
+become null, not inferred connection attempts. Addresses, ports, and finite timestamps
+are validated. Other log types, repeated schemas, and concatenated rotated logs fail.
+A valid header-only log imports zero records; a close header is optional for active
+saved logs, but records after it fail.
+
+The whole import is bounded to 16 Mi characters, 20,000 lines, 10,000 events, 1 Mi
+characters per line, and 256 characters per selected value. Malformed tails and
+unsupported input exit 2 without emitting partial JSONL. This does not establish
+source authenticity or live Zeek integration. Header and type conventions follow
+the [official Zeek log-format documentation](https://docs.zeek.org/en/current/tutorial/logs.html),
+checked October 19, 2026.
+
 ## Normalize JSON Lines
 
 Run the module directly with a file:

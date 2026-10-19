@@ -48,6 +48,10 @@ Review a saved version 2 report against its retained input with
 `PYTHONPATH` above. The verifier recomputes findings and all references, not just
 digests. See the project guide for the complete save-and-verify example.
 
+Have a saved tab-separated Zeek `conn.log` instead of JSON? The
+[text-log import guide](projects/detection-engineering/event-normalizer/README.md#import-a-zeek-text-connection-log)
+shows how to convert its declared connection fields into the same local pipeline.
+
 Validate a synthetic behavior report without installing or running a sample:
 
 ```bash

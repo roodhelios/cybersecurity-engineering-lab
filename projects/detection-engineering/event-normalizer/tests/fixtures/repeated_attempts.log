@@ -1,0 +1,12 @@
+#separator \x09
+#set_separator	,
+#empty_field	(empty)
+#unset_field	-
+#path	conn
+#fields	ts	uid	id.orig_h	id.orig_p	id.resp_h	id.resp_p	proto	conn_state	history
+#types	time	string	addr	port	addr	port	enum	string	string
+1789408800	fixture-1	192.0.2.10	51000	198.51.100.20	22	tcp	S0	S
+1789408810	fixture-2	192.0.2.10	51001	198.51.100.20	80	tcp	S0	S
+1789408820	fixture-3	192.0.2.10	51002	198.51.100.20	443	tcp	S0	S
+1789408830	fixture-4	192.0.2.10	51003	198.51.100.20	8080	tcp	S0	S
+#close	2026-09-14-18-01-00
