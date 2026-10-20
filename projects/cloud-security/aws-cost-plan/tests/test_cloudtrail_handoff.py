@@ -16,6 +16,16 @@ FIXTURE = Path(__file__).resolve().parents[1] / "examples/cloudtrail-events.json
 
 
 class CloudTrailHandoffTests(unittest.TestCase):
+    def test_logging_outcomes_survive_handoff_without_raw_error_details(self):
+        data = FIXTURE.with_name("cloudtrail-logging-outcomes.jsonl").read_bytes()
+        result = build_handoff(data, case_id="outcome-review", scope_note="synthetic")
+        self.assertEqual(result["finding_count"], 3)
+        self.assertEqual([row["findings"][0]["severity"] for row in result["timeline"]],
+                         ["medium", "critical", "medium"])
+        self.assertEqual(result["containment"], "not_performed")
+        self.assertEqual(result["recovery"], "not_verified")
+        self.assertNotIn("AccessDenied", json.dumps(result))
+
     def test_fixture_groups_findings_by_event_and_preserves_provenance(self):
         data = FIXTURE.read_bytes()
         result = build_handoff(data, case_id="synthetic-001", scope_note="synthetic fixture only")

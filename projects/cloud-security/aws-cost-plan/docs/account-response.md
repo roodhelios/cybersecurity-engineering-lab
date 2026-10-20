@@ -35,6 +35,10 @@ not proof of compromise.
 | Root identity on the same StopLogging event | CT004, high | Is root use expected under an approved emergency process? | Escalate promptly to the account owner and incident lead using a trusted channel |
 
 CT003 and CT004 describe the same event. Do not count them as two independent attacks.
+Check outcome fields first: CT003 is medium for a recorded error and critical when
+no error is recorded. A failed attempt does not establish lost coverage; absence of
+an error does not independently verify the current logging state. Correlate with
+approved changes and authorized state evidence before proposing restoration.
 MFAUsed without Yes is insufficient MFA evidence in this fixture rule; it does not
 establish that a user lacks MFA enrollment or that every federated session is unsafe.
 

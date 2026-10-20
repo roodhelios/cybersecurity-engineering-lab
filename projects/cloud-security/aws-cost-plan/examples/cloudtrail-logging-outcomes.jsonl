@@ -1,0 +1,3 @@
+{"eventTime":"2026-10-20T09:00:00Z","eventSource":"cloudtrail.amazonaws.com","eventName":"StopLogging","userIdentity":{"type":"IAMUser"},"responseElements":null,"errorCode":"AccessDenied","errorMessage":"Synthetic denied request"}
+{"eventTime":"2026-10-20T09:01:00Z","eventSource":"cloudtrail.amazonaws.com","eventName":"StopLogging","userIdentity":{"type":"IAMUser"},"responseElements":null}
+{"eventTime":"2026-10-20T09:02:00Z","eventSource":"cloudtrail.amazonaws.com","eventName":"DeleteTrail","userIdentity":{"type":"IAMUser"},"responseElements":{"errorCode":"AccessDenied"}}
