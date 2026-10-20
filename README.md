@@ -62,6 +62,8 @@ python projects/malware_analysis/report_validator.py \
 Already have a local CloudTrail `Records` JSON or gzip export? The
 [native-file import guide](projects/cloud-security/aws-cost-plan/README.md#import-a-local-cloudtrail-records-file)
 converts it to private JSON Lines for triage and response planning without contacting AWS.
+The [logging-outcome example](projects/cloud-security/aws-cost-plan/README.md)
+also distinguishes failed logging-change attempts from events with no recorded error.
 
 Review changes between two inert malware-analysis reports without running a sample:
 

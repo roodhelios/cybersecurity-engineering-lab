@@ -47,6 +47,20 @@ def _time(value: Any) -> str:
     return parsed.astimezone(timezone.utc).isoformat().replace("+00:00", "Z")
 
 
+def _logging_error(value: Mapping[str, Any]) -> bool:
+    """Recognize recorded errors without copying service messages into findings."""
+    response = value.get("responseElements")
+    if response is not None and not isinstance(response, Mapping):
+        raise CloudTrailTriageError("responseElements must be an object or null")
+    failed = False
+    for container in (value, response or {}):
+        for field in ("errorCode", "errorMessage"):
+            if field in container:
+                _text(container[field], field)
+                failed = True
+    return failed
+
+
 def triage_event(value: Mapping[str, Any]) -> tuple[TriageFinding, ...]:
     """Return explainable findings for one locally supplied CloudTrail event."""
     if not isinstance(value, Mapping):
@@ -71,8 +85,12 @@ def triage_event(value: Mapping[str, Any]) -> tuple[TriageFinding, ...]:
             findings.append(TriageFinding("CT002", "high", name, timestamp,
                 "Console sign-in succeeded without explicit MFA evidence"))
     if source == "cloudtrail.amazonaws.com" and name in {"StopLogging", "DeleteTrail"}:
-        findings.append(TriageFinding("CT003", "critical", name, timestamp,
-            "CloudTrail logging or trail configuration was disabled"))
+        if _logging_error(value):
+            findings.append(TriageFinding("CT003", "medium", name, timestamp,
+                "CloudTrail logging-change attempt returned an error; review actor and repeated attempts"))
+        else:
+            findings.append(TriageFinding("CT003", "critical", name, timestamp,
+                "CloudTrail logging-change event has no recorded error; verify approval and current logging state"))
     if identity_type == "Root":
         findings.append(TriageFinding("CT004", "high", name, timestamp,
             "Root identity activity requires review even when another rule also matches"))

@@ -67,6 +67,24 @@ The rules flag failed console sign-in, successful console sign-in without explic
 MFA evidence, CloudTrail logging disruption, and root identity activity. These are
 triage signals that need account context and other telemetry, not proof of compromise.
 
+Distinguish logging-change outcomes before planning restoration:
+
+```bash
+PYTHONPATH=src python -m aws_cost_plan.cloudtrail_triage examples/cloudtrail-logging-outcomes.jsonl
+```
+
+Expect CT003 severities `medium`, `critical`, `medium`, in that order, and exit 1.
+StopLogging and DeleteTrail with a non-empty `errorCode` or `errorMessage`,
+at the top level or inside `responseElements`, are recorded failed attempts.
+Their error text is not copied to findings. With neither error field, the event is
+critical for review, not proof that logging is currently disabled. Null, empty, or
+non-string error fields fail validation rather than being interpreted as success.
+Root identity still independently matches CT004, even on a failed attempt.
+These severity choices are local triage policy, not an AWS severity assessment.
+See the AWS [event record fields](https://docs.aws.amazon.com/awscloudtrail/latest/userguide/cloudtrail-event-reference-record-contents.html)
+for the error-field locations. Supplied logs are untrusted claims; verify account
+state and collection completeness through the authorized response process.
+
 Correlate repeated failures using a bounded local JSON Lines file:
 
 ```bash
