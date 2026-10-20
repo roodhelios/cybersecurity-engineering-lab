@@ -46,6 +46,36 @@ policy document fails closed instead of being silently skipped. See the AWS
 [inline policy resource reference](https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-resource-iam-policy.html),
 and [managed policy reference](https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-resource-iam-managedpolicy.html).
 
+## Review IAM policies in a Terraform plan
+
+Export a saved local plan with Terraform, then review the JSON without contacting AWS:
+
+```bash
+terraform show -json SAVED_PLAN > /tmp/tfplan.json
+PYTHONPATH=src python -m aws_cost_plan.terraform_iam_cli /tmp/tfplan.json
+PYTHONPATH=src python -m aws_cost_plan.terraform_iam_cli examples/terraform-plan-iam.json
+```
+
+The included synthetic example exits 0 with an empty findings list. The reviewer walks
+the root module and nested child modules, then checks planned managed
+`aws_iam_policy` and `aws_iam_role_policy` resources with the same IAM rules used by
+the JSON and CloudFormation entry points. A supported resource with an unknown,
+missing, non-JSON, or unsupported policy fails closed instead of being skipped.
+
+Input is limited to a local regular UTF-8 JSON file of at most 8 MiB, 1,000 modules,
+and 20,000 resources. The command does not print policy payloads in findings. Duplicate
+JSON fields and excessive nesting fail closed. It does not run Terraform, parse
+configuration files, inspect prior state, review role trust policies or attachments, evaluate
+provider behavior, or calculate effective permissions. Other resource types are
+outside this reviewed subset. A clean result means no current rule matched the supplied
+planned values. It does not approve the plan or prove least privilege.
+
+Terraform documents that `show -json` emits a machine-readable plan representation and
+can expose sensitive values in plain text. Keep saved plan files private, outside Git,
+and delete them according to the review process after use. See the HashiCorp
+[JSON output format](https://developer.hashicorp.com/terraform/internals/json-format)
+and [`terraform show` warning](https://developer.hashicorp.com/terraform/cli/commands/show).
+
 Validate the synthetic example from this directory:
 
 ```bash

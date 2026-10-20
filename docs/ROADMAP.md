@@ -34,7 +34,9 @@ The backlog is ordered to produce complete, reviewable systems instead of many d
 - [x] Review embedded IAM policies in a bounded CloudFormation JSON subset. YAML,
   intrinsic-function evaluation, trust policies, and effective permissions remain out
   of scope.
-- [ ] Add checks for other infrastructure-as-code formats after a parser is selected.
+- [x] Review planned IAM policies in a bounded Terraform plan JSON subset. The local
+  parser covers two managed AWS IAM policy resource types and nested modules. It does
+  not parse Terraform configuration, trust policies, attachments, or effective access.
 - [x] Add bounded CloudTrail-oriented triage rules using synthetic JSON Lines events.
   Current rules are triage signals, not proof of account compromise.
 - [x] Create an offline account-compromise triage and response-planning runbook.

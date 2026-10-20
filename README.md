@@ -12,7 +12,7 @@ synthetic data and run locally. It does not deploy cloud resources or run malwar
 | --- | --- | --- |
 | Detection engineering | Normalize Suricata and Zeek events, correlate connections, attach conservative ATT&CK candidates | [Event normalizer](projects/detection-engineering/event-normalizer/README.md) |
 | Zero Trust | Verify signed requests, reject replay, evaluate policy fixtures, inspect hash-linked audit records | [Aegis threat model](projects/zero-trust/aegis-threat-model/README.md) |
-| Cloud security | Review offline IAM and CloudFormation policies, triage synthetic CloudTrail events, validate cost plans | [AWS security tools](projects/cloud-security/aws-cost-plan/README.md) |
+| Cloud security | Review offline IAM, CloudFormation, and Terraform plan policies, triage synthetic CloudTrail events, validate cost plans | [AWS security tools](projects/cloud-security/aws-cost-plan/README.md) |
 | Malware analysis | Validate inert behavior reports and run a pinned YARA training exercise | [Analysis exercises](projects/malware_analysis/README.md) |
 
 ## Try it in two minutes
@@ -64,6 +64,18 @@ Already have a local CloudTrail `Records` JSON or gzip export? The
 converts it to private JSON Lines for triage and response planning without contacting AWS.
 The [logging-outcome example](projects/cloud-security/aws-cost-plan/README.md)
 also distinguishes failed logging-change attempts from events with no recorded error.
+
+Review supported IAM policy resources from an already saved Terraform plan with:
+
+```bash
+PYTHONPATH=projects/cloud-security/aws-cost-plan/src \
+  python -m aws_cost_plan.terraform_iam_cli \
+  projects/cloud-security/aws-cost-plan/examples/terraform-plan-iam.json
+```
+
+The synthetic plan returns no findings. This local subset review does not approve a
+plan or calculate effective permissions. Real `terraform show -json` output may contain
+sensitive values, so keep it private and outside Git.
 
 Review changes between two inert malware-analysis reports without running a sample:
 

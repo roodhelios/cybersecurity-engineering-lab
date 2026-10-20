@@ -1,0 +1,37 @@
+{
+  "format_version": "1.2",
+  "terraform_version": "1.14.0",
+  "planned_values": {
+    "root_module": {
+      "resources": [
+        {
+          "address": "aws_iam_policy.read_reports",
+          "mode": "managed",
+          "type": "aws_iam_policy",
+          "name": "read_reports",
+          "values": {
+            "name": "read-synthetic-reports",
+            "policy": "{\"Version\":\"2012-10-17\",\"Statement\":[{\"Effect\":\"Allow\",\"Action\":[\"s3:GetObject\"],\"Resource\":[\"arn:aws:s3:::synthetic-security-reports/*\"]}]}"
+          }
+        }
+      ],
+      "child_modules": [
+        {
+          "address": "module.review_queue",
+          "resources": [
+            {
+              "address": "module.review_queue.aws_iam_role_policy.publish",
+              "mode": "managed",
+              "type": "aws_iam_role_policy",
+              "name": "publish",
+              "values": {
+                "name": "publish-review-findings",
+                "policy": "{\"Version\":\"2012-10-17\",\"Statement\":[{\"Effect\":\"Allow\",\"Action\":[\"sqs:SendMessage\"],\"Resource\":[\"arn:aws:sqs:us-east-1:111122223333:synthetic-review-queue\"]}]}"
+              }
+            }
+          ]
+        }
+      ]
+    }
+  }
+}
