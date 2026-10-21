@@ -57,7 +57,9 @@ The backlog is ordered to produce complete, reviewable systems instead of many d
   traffic. Additional network labs remain planned.
 - [x] Add a defensive signal and expected evidence for the first exercise. Findings
   link the prior and current observation lines and explicitly avoid claiming spoofing.
-  DHCP-aware reconciliation and additional network evidence remain unfinished.
+  Optional DHCP-aware reconciliation distinguishes an expected reassignment from an
+  unexplained change and rejects ambiguous lease coverage. Additional network evidence
+  remains unfinished.
 - [x] Create an inert malware behavior-report schema and bounded Python validator.
 - [x] Add a bounded YARA exercise using a non-malicious text fixture. The wrapper
   requires an installed YARA CLI and does not claim that a literal match proves

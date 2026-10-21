@@ -7,6 +7,8 @@ import ipaddress
 import json
 import re
 import sys
+from bisect import bisect_right
+from contextlib import ExitStack
 from dataclasses import dataclass
 from datetime import datetime
 from pathlib import Path
@@ -24,6 +26,16 @@ class ObservationError(ValueError):
 @dataclass(frozen=True)
 class Observation:
     timestamp: datetime
+    interface: str
+    ip: str
+    mac: str
+    line: int
+
+
+@dataclass(frozen=True)
+class Lease:
+    starts_at: datetime
+    ends_at: datetime
     interface: str
     ip: str
     mac: str
@@ -51,8 +63,34 @@ def _parse_timestamp(value: object) -> datetime:
     return parsed
 
 
-def parse_observation(line: str, line_number: int) -> Observation:
-    """Parse one strict JSON observation."""
+def _parse_interface(value: object) -> str:
+    if not isinstance(value, str) or not value or len(value) > 64:
+        raise ObservationError("interface must be a non-empty string up to 64 characters")
+    return value
+
+
+def _parse_ip(value: object) -> str:
+    if not isinstance(value, str):
+        raise ObservationError("ip must be a string")
+    try:
+        parsed = str(ipaddress.IPv4Address(value))
+    except ipaddress.AddressValueError as exc:
+        raise ObservationError("ip must be a canonical IPv4 address") from exc
+    if parsed != value:
+        raise ObservationError("ip must be a canonical IPv4 address")
+    return parsed
+
+
+def _parse_mac(value: object) -> str:
+    if not isinstance(value, str):
+        raise ObservationError("mac must be a string")
+    parsed = value.lower()
+    if not MAC_PATTERN.fullmatch(parsed):
+        raise ObservationError("mac must use six colon-separated octets")
+    return parsed
+
+
+def _parse_json_object(line: str) -> dict[str, object]:
     if len(line.encode("utf-8")) > MAX_LINE_BYTES:
         raise ObservationError("record exceeds 16384 bytes")
     try:
@@ -61,7 +99,10 @@ def parse_observation(line: str, line_number: int) -> Observation:
         raise ObservationError(f"invalid JSON ({exc.msg})") from exc
     if not isinstance(raw, dict):
         raise ObservationError("record must be a JSON object")
-    expected = {"timestamp", "interface", "ip", "mac"}
+    return raw
+
+
+def _require_fields(raw: dict[str, object], expected: set[str]) -> None:
     missing = expected - raw.keys()
     unknown = raw.keys() - expected
     if missing:
@@ -69,33 +110,89 @@ def parse_observation(line: str, line_number: int) -> Observation:
     if unknown:
         raise ObservationError(f"unknown field: {sorted(unknown)[0]}")
 
-    timestamp = _parse_timestamp(raw["timestamp"])
-    interface = raw["interface"]
-    if not isinstance(interface, str) or not interface or len(interface) > 64:
-        raise ObservationError("interface must be a non-empty string up to 64 characters")
-    ip_value = raw["ip"]
-    if not isinstance(ip_value, str):
-        raise ObservationError("ip must be a string")
-    try:
-        ip = str(ipaddress.IPv4Address(ip_value))
-    except ipaddress.AddressValueError as exc:
-        raise ObservationError("ip must be a canonical IPv4 address") from exc
-    if ip != ip_value:
-        raise ObservationError("ip must be a canonical IPv4 address")
-    mac_value = raw["mac"]
-    if not isinstance(mac_value, str):
-        raise ObservationError("mac must be a string")
-    mac = mac_value.lower()
-    if not MAC_PATTERN.fullmatch(mac):
-        raise ObservationError("mac must use six colon-separated octets")
 
-    return Observation(timestamp, interface, ip, mac, line_number)
+def parse_observation(line: str, line_number: int) -> Observation:
+    """Parse one strict JSON observation."""
+    raw = _parse_json_object(line)
+    _require_fields(raw, {"timestamp", "interface", "ip", "mac"})
+    return Observation(
+        _parse_timestamp(raw["timestamp"]),
+        _parse_interface(raw["interface"]),
+        _parse_ip(raw["ip"]),
+        _parse_mac(raw["mac"]),
+        line_number,
+    )
 
 
-def review_lines(lines: Iterable[str], *, window_seconds: int = 300) -> dict[str, object]:
+def parse_lease(line: str, line_number: int) -> Lease:
+    """Parse one bounded DHCP lease record."""
+    raw = _parse_json_object(line)
+    _require_fields(raw, {"starts_at", "ends_at", "interface", "ip", "mac"})
+    starts_at = _parse_timestamp(raw["starts_at"])
+    ends_at = _parse_timestamp(raw["ends_at"])
+    if ends_at < starts_at:
+        raise ObservationError("ends_at must not precede starts_at")
+    return Lease(
+        starts_at,
+        ends_at,
+        _parse_interface(raw["interface"]),
+        _parse_ip(raw["ip"]),
+        _parse_mac(raw["mac"]),
+        line_number,
+    )
+
+
+def _load_leases(lines: Iterable[str]) -> list[Lease]:
+    leases: list[Lease] = []
+    for line_number, line in enumerate(lines, start=1):
+        if not line.strip():
+            continue
+        if len(leases) >= MAX_RECORDS:
+            raise ObservationError(f"lease input exceeds {MAX_RECORDS} records")
+        try:
+            leases.append(parse_lease(line, line_number))
+        except ObservationError as exc:
+            raise ObservationError(f"lease line {line_number}: {exc}") from exc
+    return leases
+
+
+def _index_leases(leases: list[Lease]) -> dict[tuple[str, str, str], list[Lease]]:
+    index: dict[tuple[str, str, str], list[Lease]] = {}
+    for lease in leases:
+        index.setdefault((lease.interface, lease.ip, lease.mac), []).append(lease)
+    for schedule in index.values():
+        schedule.sort(key=lambda lease: lease.starts_at)
+        for prior, current in zip(schedule, schedule[1:]):
+            if current.starts_at <= prior.ends_at:
+                raise ObservationError(
+                    f"lease line {current.line}: overlapping DHCP leases for one mapping"
+                )
+    return index
+
+
+def _active_lease(
+    index: dict[tuple[str, str, str], list[Lease]], current: Observation
+) -> Lease | None:
+    schedule = index.get((current.interface, current.ip, current.mac), [])
+    position = bisect_right(schedule, current.timestamp, key=lambda lease: lease.starts_at)
+    if position:
+        candidate = schedule[position - 1]
+        if current.timestamp <= candidate.ends_at:
+            return candidate
+    return None
+
+
+def review_lines(
+    lines: Iterable[str],
+    *,
+    window_seconds: int = 300,
+    leases: Iterable[str] | None = None,
+) -> dict[str, object]:
     """Return mapping-change findings from saved observations."""
     if not 1 <= window_seconds <= 3600:
         raise ObservationError("window must be between 1 and 3600 seconds")
+    lease_records = _load_leases(leases) if leases is not None else None
+    lease_index = _index_leases(lease_records) if lease_records is not None else None
     observations: list[Observation] = []
     for line_number, line in enumerate(lines, start=1):
         if not line.strip():
@@ -119,8 +216,7 @@ def review_lines(lines: Iterable[str], *, window_seconds: int = 300) -> dict[str
         if prior and current.mac != prior.mac:
             age = (current.timestamp - prior.timestamp).total_seconds()
             if age <= window_seconds:
-                findings.append(
-                    {
+                finding: dict[str, object] = {
                         "type": "ip_mac_mapping_change",
                         "confidence": "medium",
                         "interface": current.interface,
@@ -131,10 +227,17 @@ def review_lines(lines: Iterable[str], *, window_seconds: int = 300) -> dict[str
                         "current_line": current.line,
                         "elapsed_seconds": int(age),
                     }
-                )
+                if lease_index is not None:
+                    active_lease = _active_lease(lease_index, current)
+                    if active_lease:
+                        finding["lease_status"] = "expected_reassignment"
+                        finding["lease_line"] = active_lease.line
+                    else:
+                        finding["lease_status"] = "unexplained_change"
+                findings.append(finding)
         previous[key] = current
 
-    return {
+    report: dict[str, object] = {
         "schema_version": 1,
         "observation_count": len(observations),
         "finding_count": len(findings),
@@ -145,16 +248,40 @@ def review_lines(lines: Iterable[str], *, window_seconds: int = 300) -> dict[str
             "or address reuse and is not proof of ARP spoofing."
         ),
     }
+    if lease_records is not None:
+        expected = sum(
+            finding.get("lease_status") == "expected_reassignment" for finding in findings
+        )
+        report["lease_reconciliation"] = {
+            "lease_count": len(lease_records),
+            "expected_reassignments": expected,
+            "unexplained_changes": len(findings) - expected,
+        }
+    return report
 
 
 def main(argv: Sequence[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("input", type=Path, help="saved JSON Lines observations")
+    parser.add_argument("--leases", type=Path, help="optional saved DHCP lease JSON Lines")
     parser.add_argument("--window-seconds", type=int, default=300)
     args = parser.parse_args(argv)
+    if args.leases and args.input.resolve() == args.leases.resolve():
+        print("error: observation and lease inputs must be different files", file=sys.stderr)
+        return 2
     try:
-        with args.input.open("r", encoding="utf-8") as source:
-            report = review_lines(source, window_seconds=args.window_seconds)
+        with ExitStack() as stack:
+            source = stack.enter_context(args.input.open("r", encoding="utf-8"))
+            lease_source = (
+                stack.enter_context(args.leases.open("r", encoding="utf-8"))
+                if args.leases
+                else None
+            )
+            report = review_lines(
+                source,
+                window_seconds=args.window_seconds,
+                leases=lease_source,
+            )
     except (OSError, UnicodeError, ObservationError) as exc:
         print(f"error: {exc}", file=sys.stderr)
         return 2
