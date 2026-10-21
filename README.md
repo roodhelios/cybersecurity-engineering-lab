@@ -13,6 +13,7 @@ synthetic data and run locally. It does not deploy cloud resources or run malwar
 | Detection engineering | Normalize Suricata and Zeek events, correlate connections, attach conservative ATT&CK candidates | [Event normalizer](projects/detection-engineering/event-normalizer/README.md) |
 | Zero Trust | Verify signed requests, reject replay, evaluate policy fixtures, inspect hash-linked audit records | [Aegis threat model](projects/zero-trust/aegis-threat-model/README.md) |
 | Cloud security | Review offline IAM, CloudFormation, and Terraform plan policies, triage synthetic CloudTrail events, validate cost plans | [AWS security tools](projects/cloud-security/aws-cost-plan/README.md) |
+| Network defense | Review saved synthetic ARP observations for recent IP-to-MAC mapping changes | [Offline ARP consistency review](projects/network-defense/arp-consistency/README.md) |
 | Malware analysis | Validate inert behavior reports and run a pinned YARA training exercise | [Analysis exercises](projects/malware_analysis/README.md) |
 
 ## Try it in two minutes
@@ -77,6 +78,16 @@ The synthetic plan returns no findings. This local subset review does not approv
 plan or calculate effective permissions. Real `terraform show -json` output may contain
 sensitive values, so keep it private and outside Git.
 
+Review a saved synthetic ARP observation batch without capturing traffic:
+
+```bash
+python projects/network-defense/arp-consistency/arp_consistency.py \
+  projects/network-defense/arp-consistency/examples/arp-observations.jsonl
+```
+
+Expect three observations and one medium-confidence IP-to-MAC mapping change. This is
+a consistency signal, not proof of ARP spoofing or compromise.
+
 Review changes between two inert malware-analysis reports without running a sample:
 
 ```bash
@@ -115,8 +126,8 @@ The runbook also includes a runnable handoff exporter with an input digest and
 line-linked timeline. Its output keeps containment and recovery explicitly unverified.
 
 The [ordered roadmap](docs/ROADMAP.md) records local OPA conformance and tracks live validation of
-response procedures, and additional isolated network labs. OSINT and network-defense
-tracks are planned extensions, not completed tools here. Fixture detections and
+response procedures, and additional isolated network labs. OSINT and broader network-defense
+tracks remain planned extensions. Fixture detections and
 analyst confidence fields do not prove compromise or attribution.
 
 Use only owned, synthetic, or explicitly authorized data. Keep credentials and live
