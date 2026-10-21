@@ -52,8 +52,12 @@ The backlog is ordered to produce complete, reviewable systems instead of many d
 
 ## Milestone 5: Network and malware analysis knowledge base
 
-- [ ] Turn selected network labs into reproducible, isolated exercises.
-- [ ] Add defensive detections and expected evidence for each exercise.
+- [x] Turn the first network lab into a reproducible, isolated exercise. The offline
+  ARP consistency review uses saved synthetic metadata and never captures or sends
+  traffic. Additional network labs remain planned.
+- [x] Add a defensive signal and expected evidence for the first exercise. Findings
+  link the prior and current observation lines and explicitly avoid claiming spoofing.
+  DHCP-aware reconciliation and additional network evidence remain unfinished.
 - [x] Create an inert malware behavior-report schema and bounded Python validator.
 - [x] Add a bounded YARA exercise using a non-malicious text fixture. The wrapper
   requires an installed YARA CLI and does not claim that a literal match proves
