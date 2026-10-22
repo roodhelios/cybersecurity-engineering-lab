@@ -41,10 +41,13 @@ python projects/network-defense/arp-consistency/arp_consistency.py \
   projects/network-defense/arp-consistency/examples/switch-forwarding.jsonl
 ```
 
-The included snapshot records the current MAC on `swp7` ten seconds before the ARP
-observation. The finding is marked `current_mac_observed` and linked to forwarding
-line 1. A missing, future, or stale record becomes `no_recent_current_mac`; absence
-from a saved table is not proof that the device was absent. Without
+The included history records the current MAC on `swp3`, then `swp7`, before the ARP
+observation. The finding is marked `current_mac_observed` and `port_move_observed`,
+with both forwarding source lines, both ports, and 30 elapsed seconds. When the two
+most recent eligible snapshots agree, the status is `stable_port`. One eligible
+snapshot becomes `insufficient_history`. A missing, future, or stale current record
+becomes `no_recent_current_mac`; absence from a saved table is not proof that the
+device was absent. Without
 `--forwarding-table`, no forwarding fields or summary are added.
 
 Each non-empty input line must contain exactly `timestamp`, `interface`, `ip`, and
@@ -59,9 +62,9 @@ Both timestamps require UTC offsets, and `ends_at` cannot precede `starts_at`.
 Overlapping leases for the same mapping fail the review instead of silently selecting
 one. Lease schedules are indexed so each finding does not rescan the whole lease file.
 
-Forwarding lines contain exactly `captured_at`, `interface`, `mac`, and `port`.
-The latest record at or before the changed observation is eligible when it is no more
-than 300 seconds old. Set a limit from 1 to 3,600 seconds with
+Forwarding lines contain exactly `captured_at`, `interface`, `mac`, and `port`. The
+latest two records at or before the changed observation are eligible when each is no
+more than 300 seconds old. Set a limit from 1 to 3,600 seconds with
 `--forwarding-max-age-seconds`. Duplicate capture times for one interface and MAC are
 rejected instead of selecting an arbitrary port. Forwarding schedules are indexed.
 
@@ -76,11 +79,12 @@ python -m unittest discover \
 
 A mapping change is a review signal, not proof of spoofing or compromise. Planned
 failover, device replacement, address reuse, and virtualization can produce the same
-observation. The saved DHCP and forwarding files are unauthenticated supporting
-evidence. This exercise does not validate packet provenance, live DHCP state, the
-completeness of a switch table, interface authorization, or whether an observation was
-collected correctly. Keep real network identifiers and infrastructure exports private
-and out of Git.
+observation. A reported port move means only that two saved records name different
+ports for the same interface and MAC. The saved DHCP and forwarding files are
+unauthenticated supporting evidence. This exercise does not validate packet provenance,
+live DHCP state, the completeness of a switch table, interface authorization, switch
+topology, or whether an observation was collected correctly. Keep real network
+identifiers and infrastructure exports private and out of Git.
 
-Next, add deterministic comparison across two forwarding snapshots so a reviewer can
-see whether the current MAC also moved ports near the IP-to-MAC change.
+Next, add an explicit allowlist for expected switch ports so a move can be compared
+with reviewed local topology policy without contacting a switch.

@@ -13,7 +13,7 @@ synthetic data and run locally. It does not deploy cloud resources or run malwar
 | Detection engineering | Normalize Suricata and Zeek events, correlate connections, attach conservative ATT&CK candidates | [Event normalizer](projects/detection-engineering/event-normalizer/README.md) |
 | Zero Trust | Verify signed requests, reject replay, evaluate policy fixtures, inspect hash-linked audit records | [Aegis threat model](projects/zero-trust/aegis-threat-model/README.md) |
 | Cloud security | Review offline IAM, CloudFormation, and Terraform plan policies, triage synthetic CloudTrail events, validate cost plans | [AWS security tools](projects/cloud-security/aws-cost-plan/README.md) |
-| Network defense | Review saved synthetic ARP observations for recent IP-to-MAC mapping changes | [Offline ARP consistency review](projects/network-defense/arp-consistency/README.md) |
+| Network defense | Review saved ARP changes against synthetic DHCP and switch-port history | [Offline ARP consistency review](projects/network-defense/arp-consistency/README.md) |
 | Malware analysis | Validate inert behavior reports and run a pinned YARA training exercise | [Analysis exercises](projects/malware_analysis/README.md) |
 
 ## Try it in two minutes
@@ -88,7 +88,7 @@ python projects/network-defense/arp-consistency/arp_consistency.py \
 Expect three observations and one medium-confidence IP-to-MAC mapping change. This is
 a consistency signal, not proof of ARP spoofing or compromise. The project guide also
 shows optional reconciliation against separately retained synthetic DHCP lease and
-switch forwarding-table evidence.
+switch forwarding-table evidence, including saved port-move comparison.
 
 Review changes between two inert malware-analysis reports without running a sample:
 
