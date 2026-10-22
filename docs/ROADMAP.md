@@ -58,7 +58,9 @@ The backlog is ordered to produce complete, reviewable systems instead of many d
 - [x] Add a defensive signal and expected evidence for the first exercise. Findings
   link the prior and current observation lines and explicitly avoid claiming spoofing.
   Optional DHCP-aware reconciliation distinguishes an expected reassignment from an
-  unexplained change and rejects ambiguous lease coverage. Additional network evidence
+  unexplained change and rejects ambiguous lease coverage. A bounded saved forwarding
+  table can also confirm that the current MAC appeared on a named port near the
+  observation without treating the export as authenticated. Port-move comparison
   remains unfinished.
 - [x] Create an inert malware behavior-report schema and bounded Python validator.
 - [x] Add a bounded YARA exercise using a non-malicious text fixture. The wrapper
