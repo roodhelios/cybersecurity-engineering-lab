@@ -240,21 +240,24 @@ def _index_forwarding_entries(
     return index
 
 
-def _recent_forwarding_entry(
+def _recent_forwarding_history(
     index: dict[tuple[str, str], list[ForwardingEntry]],
     current: Observation,
     max_age_seconds: int,
-) -> ForwardingEntry | None:
+) -> tuple[ForwardingEntry, ...]:
     schedule = index.get((current.interface, current.mac), [])
     position = bisect_right(
         schedule, current.timestamp, key=lambda entry: entry.captured_at
     )
-    if position:
-        candidate = schedule[position - 1]
-        age = (current.timestamp - candidate.captured_at).total_seconds()
-        if age <= max_age_seconds:
-            return candidate
-    return None
+    if not position:
+        return ()
+    candidates = schedule[max(0, position - 2):position]
+    return tuple(
+        entry
+        for entry in candidates
+        if (current.timestamp - entry.captured_at).total_seconds()
+        <= max_age_seconds
+    )
 
 
 def review_lines(
@@ -324,15 +327,34 @@ def review_lines(
                     else:
                         finding["lease_status"] = "unexplained_change"
                 if forwarding_index is not None:
-                    forwarding_entry = _recent_forwarding_entry(
+                    forwarding_history = _recent_forwarding_history(
                         forwarding_index, current, forwarding_max_age_seconds
                     )
-                    if forwarding_entry:
+                    if forwarding_history:
+                        forwarding_entry = forwarding_history[-1]
                         finding["forwarding_status"] = "current_mac_observed"
                         finding["forwarding_line"] = forwarding_entry.line
                         finding["current_port"] = forwarding_entry.port
+                        if len(forwarding_history) == 2:
+                            prior_entry = forwarding_history[0]
+                            finding["port_history_status"] = (
+                                "port_move_observed"
+                                if prior_entry.port != forwarding_entry.port
+                                else "stable_port"
+                            )
+                            finding["previous_port"] = prior_entry.port
+                            finding["previous_forwarding_line"] = prior_entry.line
+                            finding["port_history_elapsed_seconds"] = int(
+                                (
+                                    forwarding_entry.captured_at
+                                    - prior_entry.captured_at
+                                ).total_seconds()
+                            )
+                        else:
+                            finding["port_history_status"] = "insufficient_history"
                     else:
                         finding["forwarding_status"] = "no_recent_current_mac"
+                        finding["port_history_status"] = "insufficient_history"
                 findings.append(finding)
         previous[key] = current
 
@@ -366,6 +388,18 @@ def review_lines(
             "current_mac_observed": observed,
             "no_recent_current_mac": len(findings) - observed,
             "max_age_seconds": forwarding_max_age_seconds,
+            "port_moves_observed": sum(
+                finding.get("port_history_status") == "port_move_observed"
+                for finding in findings
+            ),
+            "stable_ports": sum(
+                finding.get("port_history_status") == "stable_port"
+                for finding in findings
+            ),
+            "insufficient_port_history": sum(
+                finding.get("port_history_status") == "insufficient_history"
+                for finding in findings
+            ),
         }
     return report
 

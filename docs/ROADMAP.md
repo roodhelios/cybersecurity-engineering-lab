@@ -60,8 +60,8 @@ The backlog is ordered to produce complete, reviewable systems instead of many d
   Optional DHCP-aware reconciliation distinguishes an expected reassignment from an
   unexplained change and rejects ambiguous lease coverage. A bounded saved forwarding
   table can also confirm that the current MAC appeared on a named port near the
-  observation without treating the export as authenticated. Port-move comparison
-  remains unfinished.
+  observation without treating the export as authenticated. Two recent forwarding
+  snapshots now distinguish a saved port move, a stable port, and insufficient history.
 - [x] Create an inert malware behavior-report schema and bounded Python validator.
 - [x] Add a bounded YARA exercise using a non-malicious text fixture. The wrapper
   requires an installed YARA CLI and does not claim that a literal match proves

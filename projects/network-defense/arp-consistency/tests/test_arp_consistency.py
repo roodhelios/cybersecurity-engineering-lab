@@ -82,7 +82,48 @@ class ArpConsistencyTests(unittest.TestCase):
             "current_mac_observed": 1,
             "no_recent_current_mac": 0,
             "max_age_seconds": 300,
+            "port_moves_observed": 0,
+            "stable_ports": 0,
+            "insufficient_port_history": 1,
         })
+
+    def test_two_recent_forwarding_snapshots_report_port_move(self):
+        report = arp_consistency.review_lines([
+            observation("2026-10-21T12:00:00Z"),
+            observation("2026-10-21T12:01:00Z", mac="02:00:00:00:00:99"),
+        ], forwarding_entries=[
+            forwarding_entry(captured_at="2026-10-21T12:00:20Z", port="swp3"),
+            forwarding_entry(captured_at="2026-10-21T12:00:50Z", port="swp7"),
+        ])
+
+        finding = report["findings"][0]
+        self.assertEqual(finding["port_history_status"], "port_move_observed")
+        self.assertEqual(finding["previous_port"], "swp3")
+        self.assertEqual(finding["current_port"], "swp7")
+        self.assertEqual(finding["previous_forwarding_line"], 1)
+        self.assertEqual(finding["forwarding_line"], 2)
+        self.assertEqual(finding["port_history_elapsed_seconds"], 30)
+        self.assertEqual(report["forwarding_reconciliation"]["port_moves_observed"], 1)
+
+    def test_same_port_and_stale_history_are_distinguished(self):
+        observations = [
+            observation("2026-10-21T12:00:00Z"),
+            observation("2026-10-21T12:01:00Z", mac="02:00:00:00:00:99"),
+        ]
+        stable = arp_consistency.review_lines(observations, forwarding_entries=[
+            forwarding_entry(captured_at="2026-10-21T12:00:20Z", port="swp7"),
+            forwarding_entry(captured_at="2026-10-21T12:00:50Z", port="swp7"),
+        ])
+        stale = arp_consistency.review_lines(observations, forwarding_entries=[
+            forwarding_entry(captured_at="2026-10-21T11:55:00Z", port="swp3"),
+            forwarding_entry(captured_at="2026-10-21T12:00:50Z", port="swp7"),
+        ])
+
+        self.assertEqual(stable["findings"][0]["port_history_status"], "stable_port")
+        self.assertEqual(stable["forwarding_reconciliation"]["stable_ports"], 1)
+        self.assertEqual(stale["findings"][0]["port_history_status"],
+                         "insufficient_history")
+        self.assertEqual(stale["forwarding_reconciliation"]["port_moves_observed"], 0)
 
     def test_future_stale_or_wrong_forwarding_entry_is_not_linked(self):
         observations = [
@@ -101,6 +142,10 @@ class ArpConsistencyTests(unittest.TestCase):
                 self.assertEqual(
                     report["findings"][0]["forwarding_status"],
                     "no_recent_current_mac",
+                )
+                self.assertEqual(
+                    report["findings"][0]["port_history_status"],
+                    "insufficient_history",
                 )
                 self.assertEqual(
                     report["forwarding_reconciliation"]["no_recent_current_mac"], 1
@@ -222,6 +267,10 @@ class ArpConsistencyTests(unittest.TestCase):
         self.assertEqual(report["findings"][0]["lease_status"], "expected_reassignment")
         self.assertEqual(report["findings"][0]["forwarding_status"],
                          "current_mac_observed")
+        self.assertEqual(report["findings"][0]["port_history_status"],
+                         "port_move_observed")
+        self.assertEqual(report["findings"][0]["previous_port"], "swp3")
+        self.assertEqual(report["findings"][0]["current_port"], "swp7")
 
 
 if __name__ == "__main__":
