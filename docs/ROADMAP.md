@@ -62,6 +62,8 @@ The backlog is ordered to produce complete, reviewable systems instead of many d
   table can also confirm that the current MAC appeared on a named port near the
   observation without treating the export as authenticated. Two recent forwarding
   snapshots now distinguish a saved port move, a stable port, and insufficient history.
+  A reviewed local expected-port policy distinguishes an allowed current port, an
+  unexpected port, a missing rule, and missing recent forwarding evidence.
 - [x] Create an inert malware behavior-report schema and bounded Python validator.
 - [x] Add a bounded YARA exercise using a non-malicious text fixture. The wrapper
   requires an installed YARA CLI and does not claim that a literal match proves

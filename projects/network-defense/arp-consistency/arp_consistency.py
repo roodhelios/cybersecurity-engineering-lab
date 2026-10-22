@@ -51,6 +51,14 @@ class ForwardingEntry:
     line: int
 
 
+@dataclass(frozen=True)
+class PortPolicyRule:
+    interface: str
+    mac: str
+    allowed_ports: tuple[str, ...]
+    line: int
+
+
 def _object_without_duplicates(pairs: list[tuple[str, object]]) -> dict[str, object]:
     result: dict[str, object] = {}
     for key, value in pairs:
@@ -170,6 +178,26 @@ def parse_forwarding_entry(line: str, line_number: int) -> ForwardingEntry:
     )
 
 
+def parse_port_policy_rule(line: str, line_number: int) -> PortPolicyRule:
+    """Parse one reviewed expected-port rule."""
+    raw = _parse_json_object(line)
+    _require_fields(raw, {"interface", "mac", "allowed_ports"})
+    allowed_ports = raw["allowed_ports"]
+    if not isinstance(allowed_ports, list) or not allowed_ports:
+        raise ObservationError("allowed_ports must be a non-empty list")
+    if len(allowed_ports) > 64:
+        raise ObservationError("allowed_ports must contain at most 64 ports")
+    parsed_ports = tuple(_parse_port(port) for port in allowed_ports)
+    if tuple(sorted(set(parsed_ports))) != parsed_ports:
+        raise ObservationError("allowed_ports must be sorted and unique")
+    return PortPolicyRule(
+        _parse_interface(raw["interface"]),
+        _parse_mac(raw["mac"]),
+        parsed_ports,
+        line_number,
+    )
+
+
 def _load_leases(lines: Iterable[str]) -> list[Lease]:
     leases: list[Lease] = []
     for line_number, line in enumerate(lines, start=1):
@@ -196,6 +224,20 @@ def _load_forwarding_entries(lines: Iterable[str]) -> list[ForwardingEntry]:
         except ObservationError as exc:
             raise ObservationError(f"forwarding line {line_number}: {exc}") from exc
     return entries
+
+
+def _load_port_policy(lines: Iterable[str]) -> list[PortPolicyRule]:
+    rules: list[PortPolicyRule] = []
+    for line_number, line in enumerate(lines, start=1):
+        if not line.strip():
+            continue
+        if len(rules) >= MAX_RECORDS:
+            raise ObservationError(f"port policy exceeds {MAX_RECORDS} records")
+        try:
+            rules.append(parse_port_policy_rule(line, line_number))
+        except ObservationError as exc:
+            raise ObservationError(f"port policy line {line_number}: {exc}") from exc
+    return rules
 
 
 def _index_leases(leases: list[Lease]) -> dict[tuple[str, str, str], list[Lease]]:
@@ -240,6 +282,20 @@ def _index_forwarding_entries(
     return index
 
 
+def _index_port_policy(
+    rules: list[PortPolicyRule],
+) -> dict[tuple[str, str], PortPolicyRule]:
+    index: dict[tuple[str, str], PortPolicyRule] = {}
+    for rule in rules:
+        key = (rule.interface, rule.mac)
+        if key in index:
+            raise ObservationError(
+                f"port policy line {rule.line}: duplicate rule for interface and MAC"
+            )
+        index[key] = rule
+    return index
+
+
 def _recent_forwarding_history(
     index: dict[tuple[str, str], list[ForwardingEntry]],
     current: Observation,
@@ -267,6 +323,7 @@ def review_lines(
     leases: Iterable[str] | None = None,
     forwarding_entries: Iterable[str] | None = None,
     forwarding_max_age_seconds: int = 300,
+    port_policy: Iterable[str] | None = None,
 ) -> dict[str, object]:
     """Return mapping-change findings from saved observations."""
     if not 1 <= window_seconds <= 3600:
@@ -283,6 +340,16 @@ def review_lines(
     forwarding_index = (
         _index_forwarding_entries(forwarding_records)
         if forwarding_records is not None
+        else None
+    )
+    if port_policy is not None and forwarding_entries is None:
+        raise ObservationError("port policy requires forwarding input")
+    port_policy_records = (
+        _load_port_policy(port_policy) if port_policy is not None else None
+    )
+    port_policy_index = (
+        _index_port_policy(port_policy_records)
+        if port_policy_records is not None
         else None
     )
     observations: list[Observation] = []
@@ -352,9 +419,26 @@ def review_lines(
                             )
                         else:
                             finding["port_history_status"] = "insufficient_history"
+                        if port_policy_index is not None:
+                            policy_rule = port_policy_index.get(
+                                (current.interface, current.mac)
+                            )
+                            if policy_rule is None:
+                                finding["port_policy_status"] = "no_matching_rule"
+                            else:
+                                finding["port_policy_line"] = policy_rule.line
+                                finding["port_policy_status"] = (
+                                    "expected_port"
+                                    if forwarding_entry.port in policy_rule.allowed_ports
+                                    else "unexpected_port"
+                                )
                     else:
                         finding["forwarding_status"] = "no_recent_current_mac"
                         finding["port_history_status"] = "insufficient_history"
+                        if port_policy_index is not None:
+                            finding["port_policy_status"] = (
+                                "no_recent_forwarding_evidence"
+                            )
                 findings.append(finding)
         previous[key] = current
 
@@ -401,6 +485,26 @@ def review_lines(
                 for finding in findings
             ),
         }
+    if port_policy_records is not None:
+        report["port_policy_reconciliation"] = {
+            "rule_count": len(port_policy_records),
+            "expected_ports": sum(
+                finding.get("port_policy_status") == "expected_port"
+                for finding in findings
+            ),
+            "unexpected_ports": sum(
+                finding.get("port_policy_status") == "unexpected_port"
+                for finding in findings
+            ),
+            "no_matching_rule": sum(
+                finding.get("port_policy_status") == "no_matching_rule"
+                for finding in findings
+            ),
+            "no_recent_forwarding_evidence": sum(
+                finding.get("port_policy_status") == "no_recent_forwarding_evidence"
+                for finding in findings
+            ),
+        }
     return report
 
 
@@ -413,12 +517,23 @@ def main(argv: Sequence[str] | None = None) -> int:
         type=Path,
         help="optional saved switch forwarding-table JSON Lines",
     )
+    parser.add_argument(
+        "--port-policy",
+        type=Path,
+        help="optional reviewed expected-port policy JSON Lines",
+    )
     parser.add_argument("--forwarding-max-age-seconds", type=int, default=300)
     parser.add_argument("--window-seconds", type=int, default=300)
     args = parser.parse_args(argv)
-    input_paths = [path.resolve() for path in (args.input, args.leases, args.forwarding_table) if path]
+    if args.port_policy and not args.forwarding_table:
+        parser.error("--port-policy requires --forwarding-table")
+    input_paths = [
+        path.resolve()
+        for path in (args.input, args.leases, args.forwarding_table, args.port_policy)
+        if path
+    ]
     if len(input_paths) != len(set(input_paths)):
-        print("error: observation, lease, and forwarding inputs must be different files", file=sys.stderr)
+        print("error: all input files must be different", file=sys.stderr)
         return 2
     try:
         with ExitStack() as stack:
@@ -433,12 +548,18 @@ def main(argv: Sequence[str] | None = None) -> int:
                 if args.forwarding_table
                 else None
             )
+            port_policy_source = (
+                stack.enter_context(args.port_policy.open("r", encoding="utf-8"))
+                if args.port_policy
+                else None
+            )
             report = review_lines(
                 source,
                 window_seconds=args.window_seconds,
                 leases=lease_source,
                 forwarding_entries=forwarding_source,
                 forwarding_max_age_seconds=args.forwarding_max_age_seconds,
+                port_policy=port_policy_source,
             )
     except (OSError, UnicodeError, ObservationError) as exc:
         print(f"error: {exc}", file=sys.stderr)

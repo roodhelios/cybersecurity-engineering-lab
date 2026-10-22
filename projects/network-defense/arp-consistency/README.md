@@ -50,6 +50,24 @@ becomes `no_recent_current_mac`; absence from a saved table is not proof that th
 device was absent. Without
 `--forwarding-table`, no forwarding fields or summary are added.
 
+Compare the current saved port with a reviewed local policy:
+
+```bash
+python projects/network-defense/arp-consistency/arp_consistency.py \
+  projects/network-defense/arp-consistency/examples/arp-observations.jsonl \
+  --leases projects/network-defense/arp-consistency/examples/dhcp-leases.jsonl \
+  --forwarding-table \
+  projects/network-defense/arp-consistency/examples/switch-forwarding.jsonl \
+  --port-policy \
+  projects/network-defense/arp-consistency/examples/expected-ports.jsonl
+```
+
+The current `swp7` record matches the fixture policy, so the finding reports
+`expected_port` and links policy line 1. A current port outside the matching rule
+reports `unexpected_port`. A current record with no rule reports `no_matching_rule`,
+while missing recent forwarding evidence remains distinct. The report does not copy
+the allowlist into its output.
+
 Each non-empty input line must contain exactly `timestamp`, `interface`, `ip`, and
 `mac`. Timestamps need an explicit UTC offset, IPv4 addresses must be canonical, and
 MAC addresses use six colon-separated octets. The command rejects duplicate JSON
@@ -67,6 +85,11 @@ latest two records at or before the changed observation are eligible when each i
 more than 300 seconds old. Set a limit from 1 to 3,600 seconds with
 `--forwarding-max-age-seconds`. Duplicate capture times for one interface and MAC are
 rejected instead of selecting an arbitrary port. Forwarding schedules are indexed.
+
+Port policy lines contain exactly `interface`, `mac`, and `allowed_ports`. Rules match
+one interface and MAC pair. Each allowlist must be non-empty, sorted, unique, and no
+larger than 64 entries. Duplicate rules fail closed. `--port-policy` requires
+`--forwarding-table`; policy evaluation never contacts a switch.
 
 ## Validate
 
@@ -86,5 +109,5 @@ live DHCP state, the completeness of a switch table, interface authorization, sw
 topology, or whether an observation was collected correctly. Keep real network
 identifiers and infrastructure exports private and out of Git.
 
-Next, add an explicit allowlist for expected switch ports so a move can be compared
-with reviewed local topology policy without contacting a switch.
+Next, add a small fixture-driven report diff so reviewers can compare two saved runs
+without losing the source-line references.
