@@ -31,6 +31,12 @@ def forwarding_entry(captured_at="2026-10-21T12:00:50Z",
                        "mac": mac, "port": port})
 
 
+def port_policy(mac="02:00:00:00:00:99", interface="lab0",
+                allowed_ports=None):
+    return json.dumps({"interface": interface, "mac": mac,
+                       "allowed_ports": allowed_ports or ["swp7"]})
+
+
 class ArpConsistencyTests(unittest.TestCase):
     def test_reports_recent_mapping_change_with_source_lines(self):
         report = arp_consistency.review_lines([
@@ -104,6 +110,82 @@ class ArpConsistencyTests(unittest.TestCase):
         self.assertEqual(finding["forwarding_line"], 2)
         self.assertEqual(finding["port_history_elapsed_seconds"], 30)
         self.assertEqual(report["forwarding_reconciliation"]["port_moves_observed"], 1)
+
+    def test_port_policy_marks_expected_and_unexpected_current_ports(self):
+        observations = [
+            observation("2026-10-21T12:00:00Z"),
+            observation("2026-10-21T12:01:00Z", mac="02:00:00:00:00:99"),
+        ]
+        expected = arp_consistency.review_lines(
+            observations,
+            forwarding_entries=[forwarding_entry()],
+            port_policy=[port_policy()],
+        )
+        unexpected = arp_consistency.review_lines(
+            observations,
+            forwarding_entries=[forwarding_entry(port="swp8")],
+            port_policy=[port_policy()],
+        )
+
+        self.assertEqual(expected["findings"][0]["port_policy_status"],
+                         "expected_port")
+        self.assertEqual(expected["findings"][0]["port_policy_line"], 1)
+        self.assertEqual(expected["port_policy_reconciliation"], {
+            "rule_count": 1,
+            "expected_ports": 1,
+            "unexpected_ports": 0,
+            "no_matching_rule": 0,
+            "no_recent_forwarding_evidence": 0,
+        })
+        self.assertEqual(unexpected["findings"][0]["port_policy_status"],
+                         "unexpected_port")
+        self.assertEqual(
+            unexpected["port_policy_reconciliation"]["unexpected_ports"], 1
+        )
+
+    def test_port_policy_distinguishes_missing_rule_and_missing_evidence(self):
+        observations = [
+            observation("2026-10-21T12:00:00Z"),
+            observation("2026-10-21T12:01:00Z", mac="02:00:00:00:00:99"),
+        ]
+        missing_rule = arp_consistency.review_lines(
+            observations,
+            forwarding_entries=[forwarding_entry()],
+            port_policy=[port_policy(mac="02:00:00:00:00:98")],
+        )
+        missing_evidence = arp_consistency.review_lines(
+            observations,
+            forwarding_entries=[],
+            port_policy=[port_policy()],
+        )
+
+        self.assertEqual(missing_rule["findings"][0]["port_policy_status"],
+                         "no_matching_rule")
+        self.assertEqual(missing_evidence["findings"][0]["port_policy_status"],
+                         "no_recent_forwarding_evidence")
+
+    def test_rejects_ambiguous_port_policy(self):
+        observations = [
+            observation("2026-10-21T12:00:00Z"),
+            observation("2026-10-21T12:01:00Z", mac="02:00:00:00:00:99"),
+        ]
+        with self.assertRaisesRegex(arp_consistency.ObservationError,
+                                    "requires forwarding input"):
+            arp_consistency.review_lines(observations, port_policy=[port_policy()])
+        with self.assertRaisesRegex(arp_consistency.ObservationError,
+                                    "sorted and unique"):
+            arp_consistency.review_lines(
+                observations,
+                forwarding_entries=[],
+                port_policy=[port_policy(allowed_ports=["swp8", "swp7"])],
+            )
+        with self.assertRaisesRegex(arp_consistency.ObservationError,
+                                    "duplicate rule"):
+            arp_consistency.review_lines(
+                observations,
+                forwarding_entries=[],
+                port_policy=[port_policy(), port_policy()],
+            )
 
     def test_same_port_and_stale_history_are_distinguished(self):
         observations = [
@@ -253,12 +335,14 @@ class ArpConsistencyTests(unittest.TestCase):
         fixture = Path(__file__).resolve().parents[1] / "examples/arp-observations.jsonl"
         leases = fixture.with_name("dhcp-leases.jsonl")
         forwarding = fixture.with_name("switch-forwarding.jsonl")
+        policy = fixture.with_name("expected-ports.jsonl")
         output = StringIO()
         with redirect_stdout(output):
             result = arp_consistency.main([
                 str(fixture),
                 "--leases", str(leases),
                 "--forwarding-table", str(forwarding),
+                "--port-policy", str(policy),
             ])
         report = json.loads(output.getvalue())
         self.assertEqual(result, 0)
@@ -271,6 +355,8 @@ class ArpConsistencyTests(unittest.TestCase):
                          "port_move_observed")
         self.assertEqual(report["findings"][0]["previous_port"], "swp3")
         self.assertEqual(report["findings"][0]["current_port"], "swp7")
+        self.assertEqual(report["findings"][0]["port_policy_status"],
+                         "expected_port")
 
 
 if __name__ == "__main__":
