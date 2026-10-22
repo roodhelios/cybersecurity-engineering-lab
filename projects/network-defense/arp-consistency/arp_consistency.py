@@ -42,6 +42,15 @@ class Lease:
     line: int
 
 
+@dataclass(frozen=True)
+class ForwardingEntry:
+    captured_at: datetime
+    interface: str
+    mac: str
+    port: str
+    line: int
+
+
 def _object_without_duplicates(pairs: list[tuple[str, object]]) -> dict[str, object]:
     result: dict[str, object] = {}
     for key, value in pairs:
@@ -88,6 +97,12 @@ def _parse_mac(value: object) -> str:
     if not MAC_PATTERN.fullmatch(parsed):
         raise ObservationError("mac must use six colon-separated octets")
     return parsed
+
+
+def _parse_port(value: object) -> str:
+    if not isinstance(value, str) or not value or len(value) > 64:
+        raise ObservationError("port must be a non-empty string up to 64 characters")
+    return value
 
 
 def _parse_json_object(line: str) -> dict[str, object]:
@@ -142,6 +157,19 @@ def parse_lease(line: str, line_number: int) -> Lease:
     )
 
 
+def parse_forwarding_entry(line: str, line_number: int) -> ForwardingEntry:
+    """Parse one saved switch forwarding-table entry."""
+    raw = _parse_json_object(line)
+    _require_fields(raw, {"captured_at", "interface", "mac", "port"})
+    return ForwardingEntry(
+        _parse_timestamp(raw["captured_at"]),
+        _parse_interface(raw["interface"]),
+        _parse_mac(raw["mac"]),
+        _parse_port(raw["port"]),
+        line_number,
+    )
+
+
 def _load_leases(lines: Iterable[str]) -> list[Lease]:
     leases: list[Lease] = []
     for line_number, line in enumerate(lines, start=1):
@@ -154,6 +182,20 @@ def _load_leases(lines: Iterable[str]) -> list[Lease]:
         except ObservationError as exc:
             raise ObservationError(f"lease line {line_number}: {exc}") from exc
     return leases
+
+
+def _load_forwarding_entries(lines: Iterable[str]) -> list[ForwardingEntry]:
+    entries: list[ForwardingEntry] = []
+    for line_number, line in enumerate(lines, start=1):
+        if not line.strip():
+            continue
+        if len(entries) >= MAX_RECORDS:
+            raise ObservationError(f"forwarding input exceeds {MAX_RECORDS} records")
+        try:
+            entries.append(parse_forwarding_entry(line, line_number))
+        except ObservationError as exc:
+            raise ObservationError(f"forwarding line {line_number}: {exc}") from exc
+    return entries
 
 
 def _index_leases(leases: list[Lease]) -> dict[tuple[str, str, str], list[Lease]]:
@@ -182,17 +224,64 @@ def _active_lease(
     return None
 
 
+def _index_forwarding_entries(
+    entries: list[ForwardingEntry],
+) -> dict[tuple[str, str], list[ForwardingEntry]]:
+    index: dict[tuple[str, str], list[ForwardingEntry]] = {}
+    for entry in entries:
+        index.setdefault((entry.interface, entry.mac), []).append(entry)
+    for schedule in index.values():
+        schedule.sort(key=lambda entry: entry.captured_at)
+        for prior, current in zip(schedule, schedule[1:]):
+            if current.captured_at == prior.captured_at:
+                raise ObservationError(
+                    f"forwarding line {current.line}: duplicate capture time for one mapping"
+                )
+    return index
+
+
+def _recent_forwarding_entry(
+    index: dict[tuple[str, str], list[ForwardingEntry]],
+    current: Observation,
+    max_age_seconds: int,
+) -> ForwardingEntry | None:
+    schedule = index.get((current.interface, current.mac), [])
+    position = bisect_right(
+        schedule, current.timestamp, key=lambda entry: entry.captured_at
+    )
+    if position:
+        candidate = schedule[position - 1]
+        age = (current.timestamp - candidate.captured_at).total_seconds()
+        if age <= max_age_seconds:
+            return candidate
+    return None
+
+
 def review_lines(
     lines: Iterable[str],
     *,
     window_seconds: int = 300,
     leases: Iterable[str] | None = None,
+    forwarding_entries: Iterable[str] | None = None,
+    forwarding_max_age_seconds: int = 300,
 ) -> dict[str, object]:
     """Return mapping-change findings from saved observations."""
     if not 1 <= window_seconds <= 3600:
         raise ObservationError("window must be between 1 and 3600 seconds")
+    if not 1 <= forwarding_max_age_seconds <= 3600:
+        raise ObservationError("forwarding max age must be between 1 and 3600 seconds")
     lease_records = _load_leases(leases) if leases is not None else None
     lease_index = _index_leases(lease_records) if lease_records is not None else None
+    forwarding_records = (
+        _load_forwarding_entries(forwarding_entries)
+        if forwarding_entries is not None
+        else None
+    )
+    forwarding_index = (
+        _index_forwarding_entries(forwarding_records)
+        if forwarding_records is not None
+        else None
+    )
     observations: list[Observation] = []
     for line_number, line in enumerate(lines, start=1):
         if not line.strip():
@@ -234,6 +323,16 @@ def review_lines(
                         finding["lease_line"] = active_lease.line
                     else:
                         finding["lease_status"] = "unexplained_change"
+                if forwarding_index is not None:
+                    forwarding_entry = _recent_forwarding_entry(
+                        forwarding_index, current, forwarding_max_age_seconds
+                    )
+                    if forwarding_entry:
+                        finding["forwarding_status"] = "current_mac_observed"
+                        finding["forwarding_line"] = forwarding_entry.line
+                        finding["current_port"] = forwarding_entry.port
+                    else:
+                        finding["forwarding_status"] = "no_recent_current_mac"
                 findings.append(finding)
         previous[key] = current
 
@@ -257,6 +356,17 @@ def review_lines(
             "expected_reassignments": expected,
             "unexplained_changes": len(findings) - expected,
         }
+    if forwarding_records is not None:
+        observed = sum(
+            finding.get("forwarding_status") == "current_mac_observed"
+            for finding in findings
+        )
+        report["forwarding_reconciliation"] = {
+            "entry_count": len(forwarding_records),
+            "current_mac_observed": observed,
+            "no_recent_current_mac": len(findings) - observed,
+            "max_age_seconds": forwarding_max_age_seconds,
+        }
     return report
 
 
@@ -264,10 +374,17 @@ def main(argv: Sequence[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("input", type=Path, help="saved JSON Lines observations")
     parser.add_argument("--leases", type=Path, help="optional saved DHCP lease JSON Lines")
+    parser.add_argument(
+        "--forwarding-table",
+        type=Path,
+        help="optional saved switch forwarding-table JSON Lines",
+    )
+    parser.add_argument("--forwarding-max-age-seconds", type=int, default=300)
     parser.add_argument("--window-seconds", type=int, default=300)
     args = parser.parse_args(argv)
-    if args.leases and args.input.resolve() == args.leases.resolve():
-        print("error: observation and lease inputs must be different files", file=sys.stderr)
+    input_paths = [path.resolve() for path in (args.input, args.leases, args.forwarding_table) if path]
+    if len(input_paths) != len(set(input_paths)):
+        print("error: observation, lease, and forwarding inputs must be different files", file=sys.stderr)
         return 2
     try:
         with ExitStack() as stack:
@@ -277,10 +394,17 @@ def main(argv: Sequence[str] | None = None) -> int:
                 if args.leases
                 else None
             )
+            forwarding_source = (
+                stack.enter_context(args.forwarding_table.open("r", encoding="utf-8"))
+                if args.forwarding_table
+                else None
+            )
             report = review_lines(
                 source,
                 window_seconds=args.window_seconds,
                 leases=lease_source,
+                forwarding_entries=forwarding_source,
+                forwarding_max_age_seconds=args.forwarding_max_age_seconds,
             )
     except (OSError, UnicodeError, ObservationError) as exc:
         print(f"error: {exc}", file=sys.stderr)

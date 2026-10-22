@@ -25,6 +25,12 @@ def lease(starts_at="2026-10-21T12:00:45Z", ends_at="2026-10-21T13:00:00Z",
                        "interface": interface, "ip": ip, "mac": mac})
 
 
+def forwarding_entry(captured_at="2026-10-21T12:00:50Z",
+                     mac="02:00:00:00:00:99", interface="lab0", port="swp7"):
+    return json.dumps({"captured_at": captured_at, "interface": interface,
+                       "mac": mac, "port": port})
+
+
 class ArpConsistencyTests(unittest.TestCase):
     def test_reports_recent_mapping_change_with_source_lines(self):
         report = arp_consistency.review_lines([
@@ -61,6 +67,61 @@ class ArpConsistencyTests(unittest.TestCase):
             "expected_reassignments": 1,
             "unexplained_changes": 0,
         })
+
+    def test_recent_forwarding_entry_links_current_mac_and_port(self):
+        report = arp_consistency.review_lines([
+            observation("2026-10-21T12:00:00Z"),
+            observation("2026-10-21T12:01:00Z", mac="02:00:00:00:00:99"),
+        ], forwarding_entries=[forwarding_entry()])
+        self.assertEqual(report["findings"][0]["forwarding_status"],
+                         "current_mac_observed")
+        self.assertEqual(report["findings"][0]["forwarding_line"], 1)
+        self.assertEqual(report["findings"][0]["current_port"], "swp7")
+        self.assertEqual(report["forwarding_reconciliation"], {
+            "entry_count": 1,
+            "current_mac_observed": 1,
+            "no_recent_current_mac": 0,
+            "max_age_seconds": 300,
+        })
+
+    def test_future_stale_or_wrong_forwarding_entry_is_not_linked(self):
+        observations = [
+            observation("2026-10-21T12:00:00Z"),
+            observation("2026-10-21T12:01:00Z", mac="02:00:00:00:00:99"),
+        ]
+        for unmatched in (
+            forwarding_entry(captured_at="2026-10-21T12:01:01Z"),
+            forwarding_entry(captured_at="2026-10-21T11:55:59Z"),
+            forwarding_entry(mac="02:00:00:00:00:98"),
+        ):
+            with self.subTest(entry=unmatched):
+                report = arp_consistency.review_lines(
+                    observations, forwarding_entries=[unmatched]
+                )
+                self.assertEqual(
+                    report["findings"][0]["forwarding_status"],
+                    "no_recent_current_mac",
+                )
+                self.assertEqual(
+                    report["forwarding_reconciliation"]["no_recent_current_mac"], 1
+                )
+
+    def test_rejects_ambiguous_forwarding_entries_and_age(self):
+        observations = [
+            observation("2026-10-21T12:00:00Z"),
+            observation("2026-10-21T12:01:00Z", mac="02:00:00:00:00:99"),
+        ]
+        with self.assertRaisesRegex(arp_consistency.ObservationError,
+                                    "duplicate capture time"):
+            arp_consistency.review_lines(
+                observations,
+                forwarding_entries=[forwarding_entry(), forwarding_entry(port="swp8")],
+            )
+        with self.assertRaisesRegex(arp_consistency.ObservationError,
+                                    "forwarding max age"):
+            arp_consistency.review_lines(
+                observations, forwarding_entries=[], forwarding_max_age_seconds=0
+            )
 
     def test_expired_or_wrong_mac_lease_does_not_explain_change(self):
         observations = [
@@ -146,14 +207,21 @@ class ArpConsistencyTests(unittest.TestCase):
     def test_fixture_runs_end_to_end(self):
         fixture = Path(__file__).resolve().parents[1] / "examples/arp-observations.jsonl"
         leases = fixture.with_name("dhcp-leases.jsonl")
+        forwarding = fixture.with_name("switch-forwarding.jsonl")
         output = StringIO()
         with redirect_stdout(output):
-            result = arp_consistency.main([str(fixture), "--leases", str(leases)])
+            result = arp_consistency.main([
+                str(fixture),
+                "--leases", str(leases),
+                "--forwarding-table", str(forwarding),
+            ])
         report = json.loads(output.getvalue())
         self.assertEqual(result, 0)
         self.assertEqual(report["observation_count"], 3)
         self.assertEqual(report["finding_count"], 1)
         self.assertEqual(report["findings"][0]["lease_status"], "expected_reassignment")
+        self.assertEqual(report["findings"][0]["forwarding_status"],
+                         "current_mac_observed")
 
 
 if __name__ == "__main__":

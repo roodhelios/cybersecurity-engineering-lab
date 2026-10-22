@@ -87,7 +87,8 @@ python projects/network-defense/arp-consistency/arp_consistency.py \
 
 Expect three observations and one medium-confidence IP-to-MAC mapping change. This is
 a consistency signal, not proof of ARP spoofing or compromise. The project guide also
-shows optional reconciliation against a separately retained synthetic DHCP lease.
+shows optional reconciliation against separately retained synthetic DHCP lease and
+switch forwarding-table evidence.
 
 Review changes between two inert malware-analysis reports without running a sample:
 
