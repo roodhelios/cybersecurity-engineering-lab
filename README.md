@@ -93,6 +93,8 @@ expected-port policy.
 For already saved Linux IPv4 neighbor JSON, the project guide also shows a
 [snapshot import](projects/network-defense/arp-consistency/README.md#import-saved-linux-neighbor-snapshots)
 that feeds this reviewer without manually rewriting observations.
+An optional retained import receipt binds original snapshot bytes and row references
+to the generated observations before publishing a verified import.
 
 Review changes between two inert malware-analysis reports without running a sample:
 
