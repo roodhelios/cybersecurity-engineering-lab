@@ -52,6 +52,33 @@ filesystem times or authenticated by this tool. Keep the original snapshots for 
 finding line numbers refer to the normalized JSON Lines, not the original JSON arrays.
 The field mapping follows [iproute2's neighbor JSON output](https://github.com/iproute2/iproute2/blob/main/ip/ipneigh.c).
 
+Retain a receipt before publishing observations, then reproduce it from the same
+snapshots in another process:
+
+```bash
+python projects/network-defense/arp-consistency/neighbor_import.py \
+  --snapshot 2026-10-23T05:00:00Z \
+  projects/network-defense/arp-consistency/examples/neighbors-before.json \
+  --snapshot 2026-10-23T05:01:00Z \
+  projects/network-defense/arp-consistency/examples/neighbors-after.json \
+  --format receipt --output /tmp/neighbor-receipt.json
+python projects/network-defense/arp-consistency/neighbor_import.py \
+  --snapshot 2026-10-23T05:00:00Z \
+  projects/network-defense/arp-consistency/examples/neighbors-before.json \
+  --snapshot 2026-10-23T05:01:00Z \
+  projects/network-defense/arp-consistency/examples/neighbors-after.json \
+  --verify-receipt /tmp/neighbor-receipt.json --output /tmp/verified-observations.jsonl
+```
+
+Use fresh output paths. The receipt contains each input's SHA-256, claimed time,
+resolved/unresolved counts, and the exact generated JSON Lines digest. Each generated
+observation line maps to a snapshot index and one-based row index in its original
+JSON array. It omits file paths, IPs, and MACs. For these fixtures, observation lines
+1 and 2 map to row 1 in snapshots 1 and 2. An edited reference or changed source byte
+prevents verified publication, even if parsed observations would be unchanged.
+Receipt verification is bounded to 4 MiB and compares the complete recomputed receipt.
+Hashes establish consistency, not source authenticity, authorization, or capture time.
+
 Reconcile the changed mapping with a separately retained DHCP lease export:
 
 ```bash
