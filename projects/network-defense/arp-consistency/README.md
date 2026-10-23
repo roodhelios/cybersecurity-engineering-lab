@@ -18,6 +18,40 @@ The synthetic fixture contains three observations. The report contains one
 medium-confidence mapping change for `192.0.2.10`, linking lines 1 and 3 with an
 elapsed time of 60 seconds. Output is deterministic JSON.
 
+## Import saved Linux neighbor snapshots
+
+For retained IPv4 neighbor JSON in the shape produced by `ip -4 -j neigh show`,
+import two files without manually rewriting rows. The supplied files are synthetic:
+
+```bash
+python projects/network-defense/arp-consistency/neighbor_import.py \
+  --snapshot 2026-10-23T05:00:00Z \
+  projects/network-defense/arp-consistency/examples/neighbors-before.json \
+  --snapshot 2026-10-23T05:01:00Z \
+  projects/network-defense/arp-consistency/examples/neighbors-after.json \
+  --output /tmp/neighbor-observations.jsonl
+python projects/network-defense/arp-consistency/arp_consistency.py \
+  /tmp/neighbor-observations.jsonl
+```
+
+Use a fresh output path on POSIX. Expect two imported observations, one skipped
+unresolved row, and one finding for `192.0.2.10` after 60 seconds. Import counts go to
+stderr; stdout, when requested instead of `--output`, contains only JSON Lines.
+The output file is private (0600), complete before publication, and never overwrites
+an existing path. The importer reads local files and does not run `ip` or contact hosts.
+
+Each resolved row needs `dst`, `dev`, and `lladdr`. Other neighbor metadata is ignored;
+an absent MAC is skipped only for an explicit `INCOMPLETE` or `FAILED` state. A saved
+MAC in a `STALE` record remains a cache observation, not a live reachability claim.
+IPv6, malformed rows, duplicate JSON fields, and duplicate interface/IP pairs within
+one snapshot fail the entire import. Use the IPv4 export subset, with at most 32
+strictly chronological snapshots, 4 MiB per snapshot, and 10,000 combined observations.
+
+The capture times are caller claims, normalized to UTC. They are not derived from
+filesystem times or authenticated by this tool. Keep the original snapshots for review;
+finding line numbers refer to the normalized JSON Lines, not the original JSON arrays.
+The field mapping follows [iproute2's neighbor JSON output](https://github.com/iproute2/iproute2/blob/main/ip/ipneigh.c).
+
 Reconcile the changed mapping with a separately retained DHCP lease export:
 
 ```bash

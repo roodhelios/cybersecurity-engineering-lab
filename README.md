@@ -90,6 +90,9 @@ a consistency signal, not proof of ARP spoofing or compromise. The project guide
 shows optional reconciliation against separately retained synthetic DHCP lease and
 switch forwarding-table evidence, including saved port-move comparison and a reviewed
 expected-port policy.
+For already saved Linux IPv4 neighbor JSON, the project guide also shows a
+[snapshot import](projects/network-defense/arp-consistency/README.md#import-saved-linux-neighbor-snapshots)
+that feeds this reviewer without manually rewriting observations.
 
 Review changes between two inert malware-analysis reports without running a sample:
 

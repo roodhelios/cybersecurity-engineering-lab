@@ -1,0 +1,4 @@
+[
+  {"dst":"192.0.2.10","dev":"lab0","lladdr":"02:00:00:00:00:10","state":["REACHABLE"]},
+  {"dst":"192.0.2.20","dev":"lab0","state":["INCOMPLETE"]}
+]
