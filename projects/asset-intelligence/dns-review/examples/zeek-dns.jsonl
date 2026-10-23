@@ -1,0 +1,3 @@
+{"ts":1792713600.0,"uid":"synthetic-dns-1","query":"web.example.test","qclass":1,"qtype":1,"qtype_name":"A","rcode":0,"rcode_name":"NOERROR","TC":false,"rejected":false,"answers":["192.0.2.10"]}
+{"ts":1792796400.0,"uid":"synthetic-dns-2","query":"web.example.test","qclass":1,"qtype":1,"qtype_name":"A","rcode":0,"rcode_name":"NOERROR","TC":false,"rejected":false,"answers":["192.0.2.11"]}
+{"ts":1792796401.0,"uid":"synthetic-dns-3","query":"worker.example.test","qclass":1,"qtype":1,"qtype_name":"A","rcode":3,"rcode_name":"NXDOMAIN","TC":false,"rejected":false}
