@@ -31,7 +31,8 @@ Each snapshot has exactly `schema_version: 1`, `observed_at` (timezone-aware ISO
 and `records`. Each record contains exactly `hostname` and `addresses`. Addresses is
 a non-empty list of at most 32 literal IPv4 or IPv6 addresses. An absent hostname
 means it was not observed in that snapshot. This format does not encode NXDOMAIN,
-empty DNS answers, TTLs, CNAMEs, or resolver status, and does not parse native DNS logs.
+empty DNS answers, TTLs, CNAMEs, or resolver status, and does not directly parse native DNS logs. The importer below converts a saved
+Zeek JSON subset first.
 Do not translate a DNS error into an empty address list or treat an omitted row as
 an authoritative negative answer.
 
@@ -106,3 +107,53 @@ be stale or wrong, so review them before acting. No team is contacted.
 the comparison command. The full comparison and exact policy digest remain in the
 output so a reviewer can trace the finding. These digests do not authenticate policy
 approval. Next: design assessment provenance before introducing risk scores.
+
+
+## Import a saved Zeek DNS log
+
+Convert saved JSON Lines from Zeek into a compatible snapshot, without contacting a
+resolver or requiring a running Zeek installation:
+
+```bash
+python projects/asset-intelligence/dns-review/zeek_dns_import.py \
+  projects/asset-intelligence/dns-review/examples/zeek-dns.jsonl \
+  --scope projects/asset-intelligence/dns-review/examples/scope.json \
+  --record-type A --observed-at 2026-10-24T00:00:00Z \
+  --output /tmp/zeek-dns-current.json
+python projects/asset-intelligence/dns-review/dns_review.py \
+  projects/asset-intelligence/dns-review/examples/before.json /tmp/zeek-dns-current.json \
+  --scope projects/asset-intelligence/dns-review/examples/scope.json
+```
+
+The fabricated log imports the latest `web.example.test` address, `192.0.2.11`.
+The comparison reports its change from the baseline. The worker's latest NXDOMAIN
+response is counted as unsuitable and omitted, rather than inventing an empty address
+set or reusing an older answer. A receipt on stdout includes the exact source and
+scope digests, selected source lines, omitted latest responses, and filtered counts.
+Retain that receipt privately with the original log when source references matter.
+The snapshot is a new 0600 file; existing output is never overwritten.
+
+Select `A` or `AAAA` explicitly, and compare only the same address family and collection
+context. The importer does not combine families or infer collection completeness.
+For each scoped query it selects the greatest transaction `ts`, regardless of file
+order. Conflicting latest responses at equal timestamps fail instead of selecting an
+arbitrary row. Identical latest responses retain all their source-line references.
+Addresses are normalized and deduplicated. Older address sets are never unioned into
+the latest response. The caller supplies an observation end at or after every selected
+transaction; Zeek transaction time is not proof of answer time or snapshot completeness.
+
+Required fields for scoped rows of the selected type are numeric `ts`, numeric
+`qtype`, Internet `qclass: 1`, numeric `rcode`, and boolean `TC` and `rejected`.
+Optional `qtype_name` must agree with the selection. Successful responses need a
+nonempty answer array with at most 32 literal addresses of the selected family.
+Truncated, rejected, negative, absent-answer, CNAME-containing, and wrong-family
+latest responses are omitted with reasons. Alias answers are not assigned to the
+query hostname because the flattened answer list does not establish that attribution.
+Unknown metadata is ignored and never copied; out-of-scope queries and other record
+types are counted separately. Invalid JSON, duplicate keys, malformed required fields,
+non-finite values, rows over 64 KiB, more than 1,000 rows or a file over 1 MiB fail the
+whole import. TSV, arbitrary DNS records, resolver-specific views and TTL expiry are
+unsupported. No source authentication or authorization is inferred from these files.
+
+Field semantics follow [Zeek's DNS log documentation](https://docs.zeek.org/en/current/reference/logs/dns.html).
+Tests use synthetic JSON only; no live Zeek collection or third-party DNS was tested.
