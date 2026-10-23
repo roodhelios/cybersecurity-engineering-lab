@@ -13,6 +13,7 @@ synthetic data and run locally. It does not deploy cloud resources or run malwar
 | Detection engineering | Normalize Suricata and Zeek events, correlate connections, attach conservative ATT&CK candidates | [Event normalizer](projects/detection-engineering/event-normalizer/README.md) |
 | Zero Trust | Verify signed requests, reject replay, evaluate policy fixtures, inspect hash-linked audit records | [Aegis threat model](projects/zero-trust/aegis-threat-model/README.md) |
 | Cloud security | Review offline IAM, CloudFormation, and Terraform plan policies, triage synthetic CloudTrail events, validate cost plans | [AWS security tools](projects/cloud-security/aws-cost-plan/README.md) |
+| Asset intelligence | Compare explicitly scoped saved DNS observations and retain source-row references | [Scoped DNS review](projects/asset-intelligence/dns-review/README.md) |
 | Network defense | Review saved ARP changes against synthetic DHCP, switch history, and expected-port policy | [Offline ARP consistency review](projects/network-defense/arp-consistency/README.md) |
 | Malware analysis | Validate inert behavior reports and run a pinned YARA training exercise | [Analysis exercises](projects/malware_analysis/README.md) |
 
@@ -109,6 +110,20 @@ changes and `attack_mappings.status: not_comparable`: version 1 did not record t
 collection. For two version 2 reports, the tool also identifies mappings that need
 review because their linked observations changed. See the
 [comparison contract](projects/malware_analysis/README.md#compare-analysis-revisions).
+
+Start a scoped asset-inventory review from two supplied DNS observation snapshots:
+
+```bash
+python projects/asset-intelligence/dns-review/dns_review.py \
+  projects/asset-intelligence/dns-review/examples/before.json \
+  projects/asset-intelligence/dns-review/examples/after.json \
+  --scope projects/asset-intelligence/dns-review/examples/scope.json
+```
+
+Expect one changed hostname, one first observation, and one missing current observation.
+A missing row is not a deleted asset or failed DNS answer. This fixture-only input
+contract sends no queries; its [guide](projects/asset-intelligence/dns-review/README.md)
+documents scope, source references, privacy, and the remaining assessment work.
 
 ## Validate a project
 

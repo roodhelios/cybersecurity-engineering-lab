@@ -1,0 +1,1 @@
+{"schema_version":1,"observed_at":"2026-10-23T12:00:00Z","records":[{"hostname":"WEB.example.test.","addresses":["192.0.2.11"]},{"hostname":"new.example.test","addresses":["192.0.2.10"]}]}
