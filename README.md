@@ -125,6 +125,12 @@ A missing row is not a deleted asset or failed DNS answer. This fixture-only inp
 contract sends no queries; its [guide](projects/asset-intelligence/dns-review/README.md)
 documents scope, source references, privacy, and the remaining assessment work.
 
+The [DNS policy review](projects/asset-intelligence/dns-review/README.md#review-expected-addresses-and-route-a-mismatch)
+also compares supplied observations with reviewed address expectations and team
+routing. Its fixture produces one mismatch for review, with source-row and rule
+references. Missing observations and absent rules remain unassessed; no risk score,
+accepted ownership, or remediation is inferred.
+
 ## Validate a project
 
 ```bash

@@ -1,0 +1,1 @@
+{"schema_version":1,"rules":[{"hostname":"web.example.test","review_team":"web-platform","expected_addresses":["192.0.2.10"]},{"hostname":"worker.example.test","review_team":"batch-platform","expected_addresses":["192.0.2.20"]},{"hostname":"unseen.example.test","review_team":"security-triage","expected_addresses":["192.0.2.30"]}]}

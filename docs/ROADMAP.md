@@ -45,8 +45,8 @@ The backlog is ordered to produce complete, reviewable systems instead of many d
 ## Milestone 4: Safe asset intelligence
 
 - [ ] Define fixture-based asset and finding schemas. The first bounded DNS observation
-  contract and exact hostname-scope policy now work with synthetic fixtures. Finding
-  and ownership contracts remain unfinished.
+  contract and exact hostname-scope policy now work with synthetic fixtures. The first reviewed address-mismatch finding and review-team contract now work.
+  Broader finding and accepted-ownership contracts remain unfinished.
 - [ ] Normalize and deduplicate discoveries from multiple mock sources. Saved DNS
   snapshots now normalize hostnames and IP addresses, reject ambiguous duplicate rows,
   and compare address sets with source row references. General cross-source asset

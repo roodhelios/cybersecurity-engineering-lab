@@ -2,8 +2,8 @@
 
 Compare two saved hostname-to-address snapshots without sending DNS queries. This
 starts the lab's asset-intelligence milestone with explicit scope, normalized host
-records, provenance references, and an address-change review. Risk scoring, ownership,
-remediation, collection, and broader asset correlation remain unimplemented here.
+records, provenance references, and an address-change review. Reviewed address rules and team routing are available below. Risk scoring, accepted
+ownership, remediation, collection, and broader asset correlation remain unimplemented here.
 
 From the repository root, use Python 3.11 or newer and the standard library:
 
@@ -71,3 +71,38 @@ python -m unittest discover -s projects/asset-intelligence/dns-review/tests -v
 Tests use synthetic names and documentation addresses. Next: define reviewed finding
 and ownership inputs before attaching risk or remediation claims to these records.
 This is a local lab implementation with assistant support.
+
+
+## Review expected addresses and route a mismatch
+
+Supply a separately reviewed policy instead of treating every address change as a
+security finding:
+
+```bash
+python projects/asset-intelligence/dns-review/dns_policy_review.py \
+  projects/asset-intelligence/dns-review/examples/before.json \
+  projects/asset-intelligence/dns-review/examples/after.json \
+  --scope projects/asset-intelligence/dns-review/examples/scope.json \
+  --policy projects/asset-intelligence/dns-review/examples/review-policy.json
+```
+
+Expect one `reviewed_dns_address_mismatch` for `web.example.test`, routed to review
+team `web-platform`. The current observation claims `192.0.2.11`; the rule expects
+`192.0.2.10`. The finding includes the current snapshot row and policy rule index.
+It does not infer severity, compromise, accepted ownership, or a remediation action.
+The missing worker and unseen host remain `not_observed_current`; the new host has
+`no_review_rule`. Neither state produces an address-mismatch finding.
+
+Policy JSON has exactly `schema_version: 1` and `rules`. Every rule has `hostname`,
+`review_team` (a 1 to 64 character team identifier), and 1 to 32 unique normalized
+`expected_addresses`. Rules must be unique and stay within the explicit hostname
+scope. Policy inputs have the same 1 MiB bound as observations and at most 1,000
+rules. A matching address set returns `matches_reviewed_addresses`; an observed
+mismatch lists unexpected and expected-but-not-observed addresses. Expectations and
+team names are supplied policy, not a discovery or ownership lookup. Policies may
+be stale or wrong, so review them before acting. No team is contacted.
+
+`--output NEW_FILE.json` uses the same private, exclusive publication contract as
+the comparison command. The full comparison and exact policy digest remain in the
+output so a reviewer can trace the finding. These digests do not authenticate policy
+approval. Next: design assessment provenance before introducing risk scores.
