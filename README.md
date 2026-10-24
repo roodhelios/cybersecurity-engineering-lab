@@ -172,3 +172,7 @@ for its explicit A/AAAA selection, latest-response rules and coverage limits.
 The [DNS risk-review option](projects/asset-intelligence/dns-review/README.md#add-explicit-risk-review-facts)
 adds explicit impact, exposure and change-authorization facts to current mismatch
 findings. Missing facts stay unassessed; scores remain explainable lab triage.
+
+The saved DNS workflow also accepts explicit [team response claims](projects/asset-intelligence/dns-review/README.md#record-an-explicit-team-response).
+Responses bind the exact policy/finding/observation revision. Missing responses stay
+pending; a supplied acceptance claim does not authenticate a team or establish ownership.

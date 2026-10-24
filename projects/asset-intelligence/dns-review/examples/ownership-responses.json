@@ -1,0 +1,12 @@
+{
+  "schema_version": 1,
+  "responses": [
+    {
+      "finding_sha256": "1cff60a57a245540dc45f4eaf814db1773d7adf903cb32cc9f56f8d138f1c39f",
+      "team": "web-platform",
+      "decision": "accepted",
+      "reviewed_at": "2026-10-24T01:00:00Z",
+      "review_reference": "synthetic-response-001"
+    }
+  ]
+}

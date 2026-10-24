@@ -226,3 +226,26 @@ the current snapshot. Stale, unmatched, ambiguous, unknown or malformed facts re
 the entire workflow before output. Review references are bounded technical labels,
 not proof of a person, approval or accepted ownership. Scope and every supplied fact
 remain claims. This adds no enrichment, notification, exploit test or remediation.
+
+## Record an explicit team response
+
+Routing a mismatch to a team does not record whether that team accepts the review.
+The saved-log workflow now accepts `--ownership-responses examples/ownership-responses.json`
+(in this directory). Add that option to the workflow command above, using a new output
+path. For the committed fixtures, expect one `accepted_claim`, zero pending responses,
+and the same mismatch finding. `--assessment` can be used at the same time; team
+responses never change the risk calculation.
+
+The input has `schema_version: 1` and a `responses` list. Each response contains
+`finding_sha256`, `team`, `decision` (`accepted` or `declined`), `reviewed_at` and a
+bounded `review_reference`. Generate the digest with
+`dns_ownership_review.finding_digest(review, finding)` from the returned workflow's
+`review` and selected finding. It binds the full finding, policy digest, current
+observation time and addresses. A changed policy, finding or observation requires a
+new response. Only the routed team is supported; reassignment needs a new policy.
+Missing responses remain `pending`; duplicates, stale digests, wrong teams and times
+before the observation fail before publication.
+
+The response is a supplied claim. It does not authenticate a team member, establish
+asset ownership, dismiss a finding, grant access or send a notification. Authentication,
+independent acceptance evidence and remediation remain unfinished.
