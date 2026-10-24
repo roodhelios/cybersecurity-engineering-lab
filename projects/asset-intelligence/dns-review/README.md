@@ -157,3 +157,33 @@ unsupported. No source authentication or authorization is inferred from these fi
 
 Field semantics follow [Zeek's DNS log documentation](https://docs.zeek.org/en/current/reference/logs/dns.html).
 Tests use synthetic JSON only; no live Zeek collection or third-party DNS was tested.
+
+
+## Run the saved-log policy workflow in one command
+
+Use one explicit address family for both collection windows, and retain the imported
+snapshots, source-line receipts and policy findings in one private report:
+
+```bash
+python projects/asset-intelligence/dns-review/zeek_dns_workflow.py \
+  projects/asset-intelligence/dns-review/examples/zeek-dns-before.jsonl \
+  projects/asset-intelligence/dns-review/examples/zeek-dns.jsonl \
+  --scope projects/asset-intelligence/dns-review/examples/scope.json \
+  --policy projects/asset-intelligence/dns-review/examples/review-policy.json \
+  --record-type A --previous-observed-at 2026-10-23T00:00:00Z \
+  --current-observed-at 2026-10-24T00:00:00Z --output /tmp/dns-policy-workflow.json
+```
+
+Expect `review_created` and one finding, routed to `web-platform`. The report contains
+both import receipts, both generated snapshots and the complete existing policy review.
+The current web address comes from native log line 2. The worker's latest negative
+response remains an omitted observation. The single `record-type` option prevents
+accidentally comparing A imports with AAAA imports. The same scope applies to both logs.
+
+Every stage must succeed before the complete 0600 report is published. Invalid trailing
+log data, policy violations, collection-time errors or an existing output produce exit 2
+with no success result or partial publication. Limits and omission rules from the importer
+and policy reviewer remain in force; generated snapshots must also fit the existing
+1 MiB snapshot contract. Existing commands retain their interfaces. Source metadata is
+sensitive, so keep real logs and reports private and outside Git. No DNS query, team
+notification, risk score, accepted ownership or remediation is added by this workflow.

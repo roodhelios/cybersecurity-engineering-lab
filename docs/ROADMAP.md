@@ -50,7 +50,8 @@ The backlog is ordered to produce complete, reviewable systems instead of many d
 - [ ] Normalize and deduplicate discoveries from multiple mock sources. Saved DNS
   snapshots now normalize hostnames and IP addresses, reject ambiguous duplicate rows,
   and compare address sets with source row references. Saved Zeek DNS JSON can supply snapshots for one explicit address family, with
-  latest transaction selection and omission reasons. General cross-source asset
+  latest transaction selection and omission reasons. A single saved-log workflow now
+  retains both imports and the policy review before private publication. General cross-source asset
   identity and deduplication remain unfinished.
 - [ ] Build explainable risk scoring with boundary tests.
 - [ ] Create remediation prioritization and ownership workflows.

@@ -165,5 +165,6 @@ See [AGENTS.md](AGENTS.md) and [repository strategy](docs/decisions/0001-reposit
 Implementation has been extended with assistant support.
 
 Saved Zeek DNS JSON can now feed the scoped asset-intelligence comparison without
-handwritten snapshot conversion. See the [DNS import quickstart](projects/asset-intelligence/dns-review/README.md#import-a-saved-zeek-dns-log)
+handwritten snapshot conversion. A [single workflow command](projects/asset-intelligence/dns-review/README.md#run-the-saved-log-policy-workflow-in-one-command)
+retains both import receipts, snapshots and the policy review in one private report. See the [DNS import quickstart](projects/asset-intelligence/dns-review/README.md#import-a-saved-zeek-dns-log)
 for its explicit A/AAAA selection, latest-response rules and coverage limits.
