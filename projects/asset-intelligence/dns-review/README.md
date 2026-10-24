@@ -249,3 +249,31 @@ before the observation fail before publication.
 The response is a supplied claim. It does not authenticate a team member, establish
 asset ownership, dismiss a finding, grant access or send a notification. Authentication,
 independent acceptance evidence and remediation remain unfinished.
+
+## Prioritize the next local review
+
+Add `--queue` to the saved-log workflow. From this directory, a complete fixture run is:
+
+```bash
+python zeek_dns_workflow.py examples/zeek-dns-before.jsonl examples/zeek-dns.jsonl \
+  --scope examples/scope.json --policy examples/review-policy.json \
+  --previous-observed-at 2026-10-23T00:00:00Z --current-observed-at 2026-10-24T00:00:00Z \
+  --record-type A --assessment examples/risk-assessments.json \
+  --ownership-responses examples/ownership-responses.json --queue --output /tmp/new-dns-queue.json
+```
+
+Choose an unused output path. Expect `review_queue` with one urgent item at score 95
+and `next_review: review_proposed_remediation`. Its supplied team response remains
+`accepted_claim`, not authenticated acceptance. Without a response, the suggestion is
+`request_team_response`; a decline yields `resolve_declined_routing`. Without risk
+facts, the finding stays in `unassessed` with no score and `supply_assessment_facts`.
+
+Scored items sort by urgent, priority and routine, then descending score and hostname.
+Unassessed items form a separate final bucket; this does not classify them as low risk.
+Each item retains its finding digest, routing, response claim, and any supplied score
+factors/reference. `band_counts` makes missing assessment coverage visible. An empty
+finding set has empty work and zero counts. The original findings and scores remain.
+
+This is a review queue with suggested next steps. It adds no approved remediation,
+deadlines, ownership proof, notification or execution. Authenticated handoff and
+remediation evidence remain unfinished.

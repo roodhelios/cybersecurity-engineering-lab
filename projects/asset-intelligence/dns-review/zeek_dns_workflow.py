@@ -12,10 +12,12 @@ from dns_policy_review import review
 from zeek_dns_import import import_dns
 from dns_risk_review import score_review
 from dns_ownership_review import review_ownership
+from dns_review_queue import build_queue
 
 
 def review_logs(previous, current, scope, policy, *, previous_observed_at,
-                current_observed_at, record_type, assessment_data=None, ownership_data=None):
+                current_observed_at, record_type, assessment_data=None, ownership_data=None,
+                include_queue=False):
     before, before_receipt = import_dns(previous, scope, observed_at=previous_observed_at,
                                          record_type=record_type)
     after, after_receipt = import_dns(current, scope, observed_at=current_observed_at,
@@ -39,6 +41,8 @@ def review_logs(previous, current, scope, policy, *, previous_observed_at,
             "probability estimate, accepted ownership or remediation is established.")
     if ownership_data is not None:
         workflow["ownership_review"] = review_ownership(result, ownership_data)
+    if include_queue:
+        workflow["review_queue"] = build_queue(workflow)
     return workflow
 
 
@@ -54,6 +58,7 @@ def main(argv=None):
     parser.add_argument("--output", required=True, type=Path)
     parser.add_argument("--assessment", type=Path, help="explicit observation-bound review facts")
     parser.add_argument("--ownership-responses", type=Path, help="explicit finding-bound team response claims")
+    parser.add_argument("--queue", action="store_true", help="include prioritized local review suggestions")
     args = parser.parse_args(argv)
     try:
         if os.name != "posix":
@@ -63,7 +68,8 @@ def main(argv=None):
             previous_observed_at=args.previous_observed_at, current_observed_at=args.current_observed_at,
             record_type=args.record_type,
             assessment_data=read_input(args.assessment) if args.assessment else None,
-            ownership_data=read_input(args.ownership_responses) if args.ownership_responses else None)
+            ownership_data=read_input(args.ownership_responses) if args.ownership_responses else None,
+            include_queue=args.queue)
         publish(args.output, json.dumps(result, sort_keys=True, indent=2, allow_nan=False) + "\n")
     except (OSError, ValueError, TypeError, UnicodeError, RecursionError, OverflowError):
         print("error: saved DNS workflow did not complete; check logs, scope, policy, times and new output path",
