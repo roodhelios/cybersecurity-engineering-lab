@@ -176,3 +176,6 @@ findings. Missing facts stay unassessed; scores remain explainable lab triage.
 The saved DNS workflow also accepts explicit [team response claims](projects/asset-intelligence/dns-review/README.md#record-an-explicit-team-response).
 Responses bind the exact policy/finding/observation revision. Missing responses stay
 pending; a supplied acceptance claim does not authenticate a team or establish ownership.
+An optional [review queue](projects/asset-intelligence/dns-review/README.md#prioritize-the-next-local-review)
+orders explicit risk bands and suggests the next review step while keeping missing
+assessment facts separate from low scores. It performs no remediation.

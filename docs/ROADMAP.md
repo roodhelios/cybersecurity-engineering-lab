@@ -58,7 +58,9 @@ The backlog is ordered to produce complete, reviewable systems instead of many d
   band boundary tests. This is lab triage, not calibrated general asset risk.
 - [ ] Create remediation prioritization and ownership workflows. Explicit routed-team
   response claims now bind an exact DNS finding revision and preserve pending status.
-  Authenticated acceptance, reassignment and remediation remain unfinished.
+  Optional local review queues now prioritize explicit risk bands and preserve
+  unassessed work, response claims and review suggestions. Authenticated acceptance,
+  reassignment and remediation remain unfinished.
 - [ ] Document explicit authorization and scope controls.
 
 ## Milestone 5: Network and malware analysis knowledge base
