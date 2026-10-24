@@ -1,0 +1,1 @@
+{"ts":1792713600.0,"uid":"synthetic-dns-1","query":"web.example.test","qclass":1,"qtype":1,"qtype_name":"A","rcode":0,"rcode_name":"NOERROR","TC":false,"rejected":false,"answers":["192.0.2.10"]}
