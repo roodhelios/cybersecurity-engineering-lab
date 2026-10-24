@@ -1,0 +1,12 @@
+{
+  "schema_version": 1,
+  "assessments": [{
+    "hostname": "web.example.test",
+    "current_addresses": ["192.0.2.11"],
+    "observed_at": "2026-10-24T00:00:00Z",
+    "business_impact": "high",
+    "service_exposure": "public",
+    "change_authorization": "unreviewed",
+    "review_reference": "synthetic-dns-review-001"
+  }]
+}

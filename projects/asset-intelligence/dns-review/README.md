@@ -2,8 +2,8 @@
 
 Compare two saved hostname-to-address snapshots without sending DNS queries. This
 starts the lab's asset-intelligence milestone with explicit scope, normalized host
-records, provenance references, and an address-change review. Reviewed address rules and team routing are available below. Risk scoring, accepted
-ownership, remediation, collection, and broader asset correlation remain unimplemented here.
+records, provenance references, and an address-change review. Reviewed address rules and team routing are available below. Explicit risk triage for reviewed mismatches is available below. Accepted
+ownership, remediation, collection and broader asset correlation remain unimplemented here.
 
 From the repository root, use Python 3.11 or newer and the standard library:
 
@@ -187,3 +187,42 @@ and policy reviewer remain in force; generated snapshots must also fit the exist
 1 MiB snapshot contract. Existing commands retain their interfaces. Source metadata is
 sensitive, so keep real logs and reports private and outside Git. No DNS query, team
 notification, risk score, accepted ownership or remediation is added by this workflow.
+
+
+## Add explicit risk-review facts
+
+The workflow can score current mismatch findings when separately reviewed facts are
+supplied. Add this option to the complete saved-log command above, with a fresh output:
+
+```bash
+--assessment projects/asset-intelligence/dns-review/examples/risk-assessments.json
+```
+
+The synthetic web finding gets risk score **95**: high business impact 50, public
+exposure 25, unreviewed change 20. `risk_review` retains each factor, uncapped total,
+cap adjustment, review reference, assessment row and exact input digest. The existing
+policy finding and review-team routing remain present. Missing facts produce
+`unassessed` with no score, rather than assuming low risk. Default workflow output
+remains unchanged when the option is omitted.
+
+These are explicit model-v1 lab weights, not probabilities or vulnerability severity:
+
+| Input | Points |
+| --- | --- |
+| Business impact | low 10, moderate 30, high 50 |
+| Service exposure | internal 0, restricted 10, public 25 |
+| Change authorization | approved -20, unreviewed 20, denied 35 |
+
+Scores clamp to 0 through 100. Bands are routine below 40, priority from 40 through 69,
+and urgent from 70. Both clipping and band boundaries are tested. An approved change
+can reduce triage but never dismisses the underlying address-policy mismatch.
+
+Assessment JSON has exactly `schema_version: 1` and `assessments`, an array of at most
+1,000 entries and 1 MiB. Each entry has exactly `hostname`, `current_addresses`,
+`observed_at`, `business_impact`, `service_exposure`, `change_authorization` and
+`review_reference`. The example shows the complete shape. Each hostname must identify
+one unique current mismatch; its normalized address set and observation time must match
+the current snapshot. Stale, unmatched, ambiguous, unknown or malformed facts reject
+the entire workflow before output. Review references are bounded technical labels,
+not proof of a person, approval or accepted ownership. Scope and every supplied fact
+remain claims. This adds no enrichment, notification, exploit test or remediation.

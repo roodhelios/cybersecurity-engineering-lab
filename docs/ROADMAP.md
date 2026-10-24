@@ -53,7 +53,9 @@ The backlog is ordered to produce complete, reviewable systems instead of many d
   latest transaction selection and omission reasons. A single saved-log workflow now
   retains both imports and the policy review before private publication. General cross-source asset
   identity and deduplication remain unfinished.
-- [ ] Build explainable risk scoring with boundary tests.
+- [x] Build a bounded explainable risk model for reviewed DNS mismatches, with
+  explicit impact, exposure and authorization inputs, observation binding and clipping/
+  band boundary tests. This is lab triage, not calibrated general asset risk.
 - [ ] Create remediation prioritization and ownership workflows.
 - [ ] Document explicit authorization and scope controls.
 
