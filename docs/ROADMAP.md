@@ -56,7 +56,9 @@ The backlog is ordered to produce complete, reviewable systems instead of many d
 - [x] Build a bounded explainable risk model for reviewed DNS mismatches, with
   explicit impact, exposure and authorization inputs, observation binding and clipping/
   band boundary tests. This is lab triage, not calibrated general asset risk.
-- [ ] Create remediation prioritization and ownership workflows.
+- [ ] Create remediation prioritization and ownership workflows. Explicit routed-team
+  response claims now bind an exact DNS finding revision and preserve pending status.
+  Authenticated acceptance, reassignment and remediation remain unfinished.
 - [ ] Document explicit authorization and scope controls.
 
 ## Milestone 5: Network and malware analysis knowledge base
