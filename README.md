@@ -168,3 +168,7 @@ Saved Zeek DNS JSON can now feed the scoped asset-intelligence comparison withou
 handwritten snapshot conversion. A [single workflow command](projects/asset-intelligence/dns-review/README.md#run-the-saved-log-policy-workflow-in-one-command)
 retains both import receipts, snapshots and the policy review in one private report. See the [DNS import quickstart](projects/asset-intelligence/dns-review/README.md#import-a-saved-zeek-dns-log)
 for its explicit A/AAAA selection, latest-response rules and coverage limits.
+
+The [DNS risk-review option](projects/asset-intelligence/dns-review/README.md#add-explicit-risk-review-facts)
+adds explicit impact, exposure and change-authorization facts to current mismatch
+findings. Missing facts stay unassessed; scores remain explainable lab triage.
