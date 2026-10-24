@@ -61,6 +61,10 @@ python projects/malware_analysis/report_validator.py \
   projects/malware_analysis/examples/synthetic-behavior-report-v2.json
 ```
 
+For a private review of phase and ATT&CK-link coverage, use
+`python -m projects.malware_analysis.report_summary projects/malware_analysis/examples/synthetic-behavior-report-v2.json`.
+Expect two claimed static observations and one unlinked observation. No sample is opened.
+
 Already have a local CloudTrail `Records` JSON or gzip export? The
 [native-file import guide](projects/cloud-security/aws-cost-plan/README.md#import-a-local-cloudtrail-records-file)
 converts it to private JSON Lines for triage and response planning without contacting AWS.
