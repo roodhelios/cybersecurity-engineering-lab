@@ -87,6 +87,8 @@ The backlog is ordered to produce complete, reviewable systems instead of many d
   malicious behavior.
 - [x] Map observed behavior to ATT&CK with confidence and evidence fields. Version 2
   keeps mappings linked to report observations and preserves version 1 compatibility.
+  A bounded coverage review now reports phase/category counts and unlinked observation
+  IDs without raw evidence text. Version-1 mapping coverage stays unknown, not zero.
 
 ## Definition of done for every pull request
 
