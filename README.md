@@ -17,6 +17,10 @@ synthetic data and run locally. It does not deploy cloud resources or run malwar
 | Network defense | Review saved ARP changes against synthetic DHCP, switch history, and expected-port policy | [Offline ARP consistency review](projects/network-defense/arp-consistency/README.md) |
 | Malware analysis | Validate inert behavior reports and run a pinned YARA training exercise | [Analysis exercises](projects/malware_analysis/README.md) |
 
+Already have a saved DNS workflow report? The [reproduction command](projects/asset-intelligence/dns-review/README.md#verify-a-retained-workflow)
+checks every receipt, snapshot, finding and optional review layer against the original
+local inputs before you use the report as an analyst handoff.
+
 ## Try it in two minutes
 
 Use Python 3.11 or newer. From the repository root, normalize the included mixed
