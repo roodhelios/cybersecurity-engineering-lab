@@ -188,6 +188,45 @@ and policy reviewer remain in force; generated snapshots must also fit the exist
 sensitive, so keep real logs and reports private and outside Git. No DNS query, team
 notification, risk score, accepted ownership or remediation is added by this workflow.
 
+## Verify a retained workflow
+
+After creating `/tmp/dns-policy-workflow.json` above, reproduce the report in another
+process using the original logs, scope and policy:
+
+```bash
+python projects/asset-intelligence/dns-review/zeek_dns_workflow_verify.py \
+  /tmp/dns-policy-workflow.json \
+  projects/asset-intelligence/dns-review/examples/zeek-dns-before.jsonl \
+  projects/asset-intelligence/dns-review/examples/zeek-dns.jsonl \
+  --scope projects/asset-intelligence/dns-review/examples/scope.json \
+  --policy projects/asset-intelligence/dns-review/examples/review-policy.json
+```
+
+Expect `workflow_reproduced`, `finding_count: 1` and `record_type: A`. The verifier
+reimports both logs and recomputes the complete policy review, not just stored digests.
+It compares every retained field, including source-line references, omissions,
+snapshots and counts. JSON whitespace/key ordering may differ; values and their types
+must match. The result includes the checked report's exact byte digest.
+
+If the report contains optional risk or team-response layers, supply their exact
+original files with the same `--assessment` and `--ownership-responses` options used
+to create it. Missing or extra optional inputs fail. A retained queue is recomputed
+automatically. Changed source, scope, policy or optional-input bytes fail even when
+their JSON meaning is unchanged. A changed finding, risk score, team response, queue
+item, source receipt or extra field also fails. No input file is rewritten.
+
+The report is limited to 16 MiB and must be a regular local file, not a symlink or
+FIFO. Other inputs retain the 1 MiB bound. Exit 2 emits no success JSON and sanitized
+error text. Successful stdout contains only counts, flags, address-family selection
+and the report digest, without hostnames, addresses, team labels or raw logs.
+
+Recorded collection ends, address family and optional-layer selection remain supplied
+claims. Reproduction does not authenticate those choices, source truth, policy
+approval or team acceptance. It uses the current implementation, not a frozen historic
+model. Removing an optional layer creates a different report; this verifier does not
+enforce an externally required review policy. Retain the original source checkout and
+inputs, keep real evidence private, and review the scope before sharing a handoff.
+
 
 ## Add explicit risk-review facts
 
