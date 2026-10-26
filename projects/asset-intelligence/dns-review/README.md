@@ -316,3 +316,61 @@ finding set has empty work and zero counts. The original findings and scores rem
 This is a review queue with suggested next steps. It adds no approved remediation,
 deadlines, ownership proof, notification or execution. Authenticated handoff and
 remediation evidence remain unfinished.
+
+
+## Require independent handoff layers
+
+A self-consistent report can omit every optional review layer and still reproduce.
+The recipient can now require selected layers and an address family from a separate,
+independently trusted requirements file:
+
+```json
+{
+  "schema_version": 1,
+  "record_type": "A",
+  "required_layers": ["risk_review", "ownership_review", "review_queue"]
+}
+```
+
+From the repository root, enter this project folder and create a new private report
+(use a fresh output path if the example was already run):
+
+```bash
+cd projects/asset-intelligence/dns-review
+python zeek_dns_workflow.py examples/zeek-dns-before.jsonl examples/zeek-dns.jsonl \
+  --scope examples/scope.json --policy examples/review-policy.json \
+  --previous-observed-at 2026-10-23T00:00:00Z \
+  --current-observed-at 2026-10-24T00:00:00Z --record-type A \
+  --assessment examples/risk-assessments.json \
+  --ownership-responses examples/ownership-responses.json --queue \
+  --output /tmp/dns-required-handoff.json
+python zeek_dns_workflow_verify.py /tmp/dns-required-handoff.json \
+  examples/zeek-dns-before.jsonl examples/zeek-dns.jsonl \
+  --scope examples/scope.json --policy examples/review-policy.json \
+  --assessment examples/risk-assessments.json \
+  --ownership-responses examples/ownership-responses.json \
+  --requirements examples/handoff-requirements.json
+```
+
+The bundled requirements demand all three optional layers. A report that reproduces
+but omits any required layer exits 2 with no success document. A matching report
+returns `workflow_reproduced`, `requirements_checked: true` and the exact requirements
+file SHA-256, while the full original-input reproduction still runs. All inputs and
+the report remain unchanged. Without the flag, the prior verifier interface and
+output remain unchanged.
+
+The requirements object has exactly the three fields above. Schema version must be
+integer 1, record type is A or AAAA, and required_layers is a list of zero to three
+unique supported names. An empty list still enforces the record type. Unknown or
+duplicate fields/layers, wrong types and files over 1 MiB are rejected. The CLI uses
+the same bounded regular-file reader and rejects symlinks and special files.
+
+Choose the requirements independently of the sender's report. An attacker able to
+replace the requirements can weaken them; the digest records bytes, not policy
+authenticity or approval. Layer presence and reproducibility do not prove every
+finding was assessed or accepted, authenticate team claims, establish complete
+discovery, or prove remediation. This checks required evidence structure, not an
+external service's authorization. No DNS query, lookup or notification is sent.
+
+Next: define authenticated recipient policy distribution and per-finding review
+criteria before interpreting the required layers as approval.

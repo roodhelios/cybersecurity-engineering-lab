@@ -1,0 +1,5 @@
+{
+  "schema_version": 1,
+  "record_type": "A",
+  "required_layers": ["risk_review", "ownership_review", "review_queue"]
+}
