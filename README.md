@@ -19,7 +19,9 @@ synthetic data and run locally. It does not deploy cloud resources or run malwar
 
 Already have a saved DNS workflow report? The [reproduction command](projects/asset-intelligence/dns-review/README.md#verify-a-retained-workflow)
 checks every receipt, snapshot, finding and optional review layer against the original
-local inputs before you use the report as an analyst handoff.
+local inputs before you use the report as an analyst handoff. A separately supplied
+[recipient requirements file](projects/asset-intelligence/dns-review/README.md#require-independent-handoff-layers)
+can also require a particular address family and review layers.
 
 ## Try it in two minutes
 
