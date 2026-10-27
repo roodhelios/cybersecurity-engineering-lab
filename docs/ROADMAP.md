@@ -56,7 +56,8 @@ The backlog is ordered to produce complete, reviewable systems instead of many d
   Retained workflow reports can now reproduce every field from separately supplied
   source logs, scope, policy and optional review inputs under the current implementation.
   A separate recipient requirements file can now require the expected address family
-  and selected review layers before reproduction succeeds. This does not authenticate
+  and selected review layers before reproduction succeeds. Version 2 can additionally
+  require scored risk and explicit team-response claims for every reproduced finding. This does not authenticate
   collection choices, requirements approval or implement historical model replay.
 - [x] Build a bounded explainable risk model for reviewed DNS mismatches, with
   explicit impact, exposure and authorization inputs, observation binding and clipping/

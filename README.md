@@ -21,7 +21,8 @@ Already have a saved DNS workflow report? The [reproduction command](projects/as
 checks every receipt, snapshot, finding and optional review layer against the original
 local inputs before you use the report as an analyst handoff. A separately supplied
 [recipient requirements file](projects/asset-intelligence/dns-review/README.md#require-independent-handoff-layers)
-can also require a particular address family and review layers.
+can also require a particular address family and review layers. Version 2 can
+require explicit risk facts and team-response claims for every reproduced finding.
 
 ## Try it in two minutes
 

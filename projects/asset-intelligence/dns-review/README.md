@@ -359,7 +359,7 @@ file SHA-256, while the full original-input reproduction still runs. All inputs 
 the report remain unchanged. Without the flag, the prior verifier interface and
 output remain unchanged.
 
-The requirements object has exactly the three fields above. Schema version must be
+The version-1 requirements object has exactly the three fields above. Schema version must be
 integer 1, record type is A or AAAA, and required_layers is a list of zero to three
 unique supported names. An empty list still enforces the record type. Unknown or
 duplicate fields/layers, wrong types and files over 1 MiB are rejected. The CLI uses
@@ -374,3 +374,44 @@ external service's authorization. No DNS query, lookup or notification is sent.
 
 Next: define authenticated recipient policy distribution and per-finding review
 criteria before interpreting the required layers as approval.
+
+
+### Require complete finding review coverage
+
+Version 1 requires presence of review layers, even if their findings remain unassessed
+or pending. To require complete coverage of the reproduced mismatch findings, use:
+
+```json
+{
+  "schema_version": 2,
+  "record_type": "A",
+  "required_layers": ["risk_review", "ownership_review", "review_queue"],
+  "finding_coverage": {"risk_assessed": true, "team_responded": true}
+}
+```
+
+After creating the complete retained report in the preceding example, repeat its
+verification command with `--requirements examples/handoff-requirements-complete.json`.
+Expect `workflow_reproduced` and `requirements_checked: true`. A report rebuilt from
+empty assessment or response lists still reproduces, but fails this recipient policy.
+No success JSON is emitted on coverage failure, and no input file is modified.
+
+Version 2 has exactly these four top-level fields. `finding_coverage` has exactly the
+two shown boolean flags; integer or string substitutes are rejected. A true flag must
+also name its corresponding layer in `required_layers`. A false flag keeps that
+finding-level requirement disabled; layer-presence requirements still apply.
+Full report reproduction precedes coverage checks, so a forged score, response status
+or count cannot replace recomputation from the separately supplied review inputs.
+The requirements digest continues to bind exact bytes, not recipient approval.
+
+`risk_assessed` requires every reproduced finding's status to be `scored`.
+`team_responded` requires every finding's observation-bound response to be either
+`accepted_claim` or `declined_claim`. A decline counts as a response, not acceptance.
+Pending responses and unassessed risk do not meet the respective true flag. An empty
+finding set meets both coverage requirements when the required layers are present;
+it does not establish complete collection or absence of real problems.
+
+These checks do not authenticate reviewers, accept asset ownership, dismiss findings,
+validate risk calibration or prove remediation. Requirements must be selected and
+protected independently of the sender. Version 1 and no-requirements verification
+keep their existing behavior; saved workflow report formats are unchanged.
