@@ -58,7 +58,11 @@ The backlog is ordered to produce complete, reviewable systems instead of many d
   A separate recipient requirements file can now require the expected address family
   and selected review layers before reproduction succeeds. Version 2 can additionally
   require scored risk and explicit team-response claims for every reproduced finding. This does not authenticate
-  collection choices, requirements approval or implement historical model replay.
+  collection choices or implement historical model replay. A separate signed-handoff
+  command now authenticates recipient requirements against a locally pinned active
+  Ed25519 key, audience, validity interval and exact scope/policy byte bindings.
+  Trusted key enrollment/distribution, trust-file freshness and reviewer authority
+  remain unfinished; signing requirements does not authenticate the finding reviewers.
 - [x] Build a bounded explainable risk model for reviewed DNS mismatches, with
   explicit impact, exposure and authorization inputs, observation binding and clipping/
   band boundary tests. This is lab triage, not calibrated general asset risk.

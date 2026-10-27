@@ -23,6 +23,20 @@ local inputs before you use the report as an analyst handoff. A separately suppl
 [recipient requirements file](projects/asset-intelligence/dns-review/README.md#require-independent-handoff-layers)
 can also require a particular address family and review layers. Version 2 can
 require explicit risk facts and team-response claims for every reproduced finding.
+For a handoff that also requires recipient approval, the [signed-requirements guide](projects/asset-intelligence/dns-review/README.md#verify-recipient-signed-requirements)
+uses a locally pinned Ed25519 public key and expiring, context-bound approval.
+Try its synthetic, temporary-key walkthrough from this repository root:
+
+```bash
+python -m pip install -r projects/asset-intelligence/dns-review/requirements-auth.txt
+python projects/asset-intelligence/dns-review/demo_authorized_handoff.py
+```
+
+Expect `authorized_handoff_exercise_passed`, one finding and four rejected negative
+cases. This uses real local signature verification and a fixed fixture instant. It
+does not enroll a real recipient, authenticate source logs or establish reviewer identity.
+Only this optional signature workflow needs PyNaCl; the existing DNS commands remain
+standard-library tools.
 
 ## Try it in two minutes
 

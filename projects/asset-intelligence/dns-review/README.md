@@ -372,8 +372,9 @@ finding was assessed or accepted, authenticate team claims, establish complete
 discovery, or prove remediation. This checks required evidence structure, not an
 external service's authorization. No DNS query, lookup or notification is sent.
 
-Next: define authenticated recipient policy distribution and per-finding review
-criteria before interpreting the required layers as approval.
+For approval by a locally pinned recipient key, use the separate signed-requirements
+command below. Independent key enrollment/distribution and reviewer authority remain
+unfinished; the unsigned command does not gain approval merely by retaining a digest.
 
 
 ### Require complete finding review coverage
@@ -415,3 +416,92 @@ These checks do not authenticate reviewers, accept asset ownership, dismiss find
 validate risk calibration or prove remediation. Requirements must be selected and
 protected independently of the sender. Version 1 and no-requirements verification
 keep their existing behavior; saved workflow report formats are unchanged.
+
+## Verify recipient-signed requirements
+
+The existing verifier accepts independently selected unsigned requirement files.
+For a recipient that requires signed approval, install the optional native Ed25519
+dependency and run the complete local exercise from this project directory:
+
+```bash
+python -m pip install -r requirements-auth.txt
+python demo_authorized_handoff.py
+```
+
+Expect `authorized_handoff_exercise_passed`, `finding_count: 1`,
+`negative_cases_rejected: 4`, `native_ed25519: true` and `inputs_unchanged: true`.
+The exercise creates one ephemeral signing key in memory, a temporary authority file,
+an approval and a complete synthetic workflow. It runs both API and file-based CLI
+verification, then rejects altered requirements, a revoked key, expiry and a forged
+report. Its October 27 verification instant is explicitly supplied. All temporary
+files are discarded; no private key is written, source is collected or network used.
+Trusting a self-created demo key is not evidence of real recipient enrollment.
+
+For separately retained handoff files, use the mandatory-approval command:
+
+```bash
+python dns_authorized_handoff.py workflow.json before.jsonl after.jsonl \
+  --scope scope.json --policy review-policy.json \
+  --requirements handoff-requirements.json --approval recipient-approval.json \
+  --authority-policy trusted-recipient-authorities.json \
+  --assessment risk-assessments.json --ownership-responses ownership-responses.json
+```
+
+Use exactly the optional assessment/response inputs retained by the workflow. This
+command requires approval and authority files; it never falls back to unsigned
+verification. Omit `--at` for the current UTC clock. `--at YYYY-MM-DDTHH:MM:SSZ`
+is for explicit offline fixture/review instants and is labeled `explicit_fixture`
+in output; it does not prove an approval is currently valid. Missing crypto support,
+invalid approvals and reproduction/coverage failures emit no success JSON.
+
+Obtain the authority file independently of the handoff sender. Version 1 has exactly
+`schema_version: 1`, `authority_type: dns-recipient-authorities`, `audience`,
+`maximum_validity_seconds` and `keys`. Audience and key IDs use 3 to 64 lowercase
+letters/digits/hyphens, starting with a letter. The lifetime limit is an integer from
+1 to 604800 seconds. Each of 1 to 16 unique keys has exactly `key_id`,
+`public_key_b64` and `status`. The public key is canonical base64 for 32 raw bytes;
+status is `active`, `retired` or `revoked`. Repeated key IDs or public-key bytes fail,
+so an active alias cannot override a retired/revoked pin. Only an active pinned key is accepted.
+No key embedded in a report or approval can replace that pin.
+
+An approval has exactly `schema_version: 1`,
+`approval_type: dns-recipient-requirements`, `key_id`, `audience`, `issued_at`,
+`expires_at`, `requirements_sha256`, `scope_sha256`, `review_policy_sha256` and
+`signature_b64`. Times are canonical whole-second UTC strings ending in Z.
+The verification instant must satisfy `issued_at <= now < expires_at`, and the full
+positive validity duration must fit the authority policy's limit. Hashes bind exact
+requirement, scope and address-policy bytes, including whitespace. The detached
+64-byte Ed25519 signature covers the canonical unsigned approval fields with the
+domain prefix `cybersecurity-engineering-lab:dns-recipient-requirements:v1` followed
+by one zero byte. Duplicate/unknown JSON fields and noncanonical encodings fail.
+
+`create_approval` is the issuer API for a separately managed PyNaCl `SigningKey`.
+It signs in memory and verifies the result against the intended local authority file
+before returning approval bytes. The demo shows the API with a throwaway key. This
+project does not provide production key enrollment, private-key loading/storage or
+a signing service. Never put real private keys in examples, Git or command arguments.
+
+After approval verification, every saved workflow field is reproduced and the signed
+requirements are applied to that rebuilt result. Output adds
+`recipient_authority_checked: true`, key ID, audience, issue/expiry/check instants,
+approval and authority-file digests, and `verification_time_source`. It excludes
+source records, public keys and signatures. Identifiers, times and digests remain
+operational metadata; keep them non-sensitive and retain real handoffs privately.
+No input is changed, DNS query sent, notification delivered or remediation performed.
+
+This authenticates possession of the private key corresponding to an active local
+pin. It does not establish the named recipient's real identity or the authority file's
+authenticity/freshness. Protect that file independently, refresh revocation state and
+rotate pins through an independently authenticated process. A replaced or stale trust
+file can authorize the wrong key or miss revocation. Approvals are reusable within
+their validity window, not one-time tokens; there is no replay ledger, network key
+lookup, rollback-resistant policy version or historical trust replay. Signing
+requirements binds review context, not source truth, collection completeness, risk
+calibration, team-response authorship, accepted ownership or remediation. Those
+reviewer and distribution contracts remain next work.
+
+The optional dependency is [PyNaCl 1.6.2](https://pypi.org/project/PyNaCl/1.6.2/).
+The implementation uses its documented [SigningKey and VerifyKey API](https://pynacl.readthedocs.io/en/latest/signing/),
+not custom Ed25519 arithmetic. Run the full DNS suite with PyNaCl installed:
+`python -m unittest discover -s tests -q`. Without it, signature tests are explicitly
+skipped and the authorized command fails closed; the unsigned workflow still works.
