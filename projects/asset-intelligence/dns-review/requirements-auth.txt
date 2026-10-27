@@ -1,0 +1,2 @@
+# Optional native Ed25519 support. The unsigned DNS workflow remains standard-library only.
+PyNaCl==1.6.2

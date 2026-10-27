@@ -27,8 +27,8 @@ def read_report(path):
         return handle.read(MAX_REPORT_BYTES+1)
 
 
-def check_requirements(data, report):
-    """Apply recipient-supplied requirements, never requirements from the report."""
+def read_requirements(data):
+    """Validate a requirement contract independently of any workflow report."""
     if len(data) > 1024 * 1024:
         raise ValueError("requirements exceed 1 MiB")
     requirements = json.loads(data.decode("utf-8"), object_pairs_hook=_unique)
@@ -45,8 +45,6 @@ def check_requirements(data, report):
             any(not isinstance(layer, str) or layer not in LAYERS for layer in layers) or
             len(set(layers)) != len(layers)):
         raise ValueError("required layers must be unique supported layer names")
-    if report.get("record_type") != requirements["record_type"] or any(layer not in report for layer in layers):
-        raise ValueError("workflow does not satisfy the recipient's handoff requirements")
     if version == 2:
         coverage = requirements["finding_coverage"]
         if (not isinstance(coverage, dict) or set(coverage) != {"risk_assessed", "team_responded"} or
@@ -55,6 +53,17 @@ def check_requirements(data, report):
         for name, layer in (("risk_assessed", "risk_review"), ("team_responded", "ownership_review")):
             if coverage[name] and layer not in layers:
                 raise ValueError("finding coverage requires its review layer")
+    return requirements
+
+
+def check_requirements(data, report):
+    """Apply recipient-supplied requirements, never requirements from the report."""
+    requirements = read_requirements(data)
+    layers = requirements["required_layers"]
+    if report.get("record_type") != requirements["record_type"] or any(layer not in report for layer in layers):
+        raise ValueError("workflow does not satisfy the recipient's handoff requirements")
+    if requirements["schema_version"] == 2:
+        coverage = requirements["finding_coverage"]
         if coverage["risk_assessed"] and any(
                 item["assessment_status"] != "scored" for item in report["risk_review"]["findings"]):
             raise ValueError("recipient requires risk assessment for every finding")
