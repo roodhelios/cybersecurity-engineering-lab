@@ -1,0 +1,13 @@
+{
+  "schema_version": 2,
+  "record_type": "A",
+  "required_layers": [
+    "risk_review",
+    "ownership_review",
+    "review_queue"
+  ],
+  "finding_coverage": {
+    "risk_assessed": true,
+    "team_responded": true
+  }
+}

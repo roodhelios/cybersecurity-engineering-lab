@@ -32,10 +32,13 @@ def check_requirements(data, report):
     if len(data) > 1024 * 1024:
         raise ValueError("requirements exceed 1 MiB")
     requirements = json.loads(data.decode("utf-8"), object_pairs_hook=_unique)
-    if (not isinstance(requirements, dict) or
-            set(requirements) != {"schema_version", "record_type", "required_layers"} or
-            type(requirements["schema_version"]) is not int or requirements["schema_version"] != 1 or
-            requirements["record_type"] not in ("A", "AAAA")):
+    if not isinstance(requirements, dict) or type(requirements.get("schema_version")) is not int:
+        raise ValueError("unsupported handoff requirements")
+    version = requirements["schema_version"]
+    fields = {"schema_version", "record_type", "required_layers"}
+    if version == 2:
+        fields.add("finding_coverage")
+    if version not in (1, 2) or set(requirements) != fields or requirements["record_type"] not in ("A", "AAAA"):
         raise ValueError("unsupported handoff requirements")
     layers = requirements["required_layers"]
     if (not isinstance(layers, list) or len(layers) > 3 or
@@ -44,6 +47,21 @@ def check_requirements(data, report):
         raise ValueError("required layers must be unique supported layer names")
     if report.get("record_type") != requirements["record_type"] or any(layer not in report for layer in layers):
         raise ValueError("workflow does not satisfy the recipient's handoff requirements")
+    if version == 2:
+        coverage = requirements["finding_coverage"]
+        if (not isinstance(coverage, dict) or set(coverage) != {"risk_assessed", "team_responded"} or
+                any(type(value) is not bool for value in coverage.values())):
+            raise ValueError("expected explicit boolean finding coverage requirements")
+        for name, layer in (("risk_assessed", "risk_review"), ("team_responded", "ownership_review")):
+            if coverage[name] and layer not in layers:
+                raise ValueError("finding coverage requires its review layer")
+        if coverage["risk_assessed"] and any(
+                item["assessment_status"] != "scored" for item in report["risk_review"]["findings"]):
+            raise ValueError("recipient requires risk assessment for every finding")
+        if coverage["team_responded"] and any(
+                item["ownership_response"]["status"] not in {"accepted_claim", "declined_claim"}
+                for item in report["ownership_review"]["findings"]):
+            raise ValueError("recipient requires an explicit team response for every finding")
     return hashlib.sha256(data).hexdigest()
 
 
@@ -55,7 +73,6 @@ def verify_workflow(report_data, previous, current, scope, policy, *,
     report = json.loads(report_data.decode("utf-8"), object_pairs_hook=_unique)
     if not isinstance(report, dict) or report.get("report_type") != "zeek-dns-policy-workflow":
         raise ValueError("expected a saved DNS workflow")
-    requirement_digest = check_requirements(requirements_data, report) if requirements_data is not None else None
     if (("risk_review" in report) != (assessment_data is not None) or
             ("ownership_review" in report) != (ownership_data is not None)):
         raise ValueError("supply exactly the optional review inputs retained in the report")
@@ -67,6 +84,7 @@ def verify_workflow(report_data, previous, current, scope, policy, *,
     # Canonical bytes distinguish booleans/floats from integer counts and reject NaN.
     if _canonical(report) != _canonical(rebuilt):
         raise ValueError("saved DNS workflow did not reproduce")
+    requirement_digest = check_requirements(requirements_data, rebuilt) if requirements_data is not None else None
     result = {"schema_version": 1, "status": "workflow_reproduced",
             "finding_count": rebuilt["review"]["finding_count"], "record_type": rebuilt["record_type"],
             "report_sha256": hashlib.sha256(report_data).hexdigest(),
