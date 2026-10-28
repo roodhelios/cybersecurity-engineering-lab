@@ -62,7 +62,13 @@ The backlog is ordered to produce complete, reviewable systems instead of many d
   command now authenticates recipient requirements against a locally pinned active
   Ed25519 key, audience, validity interval and exact scope/policy byte bindings.
   Trusted key enrollment/distribution, trust-file freshness and reviewer authority
-  remain unfinished; signing requirements does not authenticate the finding reviewers.
+  remain separate from requirement approval. A separate reviewer-handoff verifier now
+  requires an independently pinned reviewer policy and a signature for both the risk
+  and team-response record of every exact finding revision. Grants bind each enrolled
+  key to a finding digest and role, plus the routed team for a response. The complete
+  temporary exercise uses native Ed25519 and rejects changed review claims even when
+  the underlying workflow still reproduces. Human identity enrollment, policy
+  distribution/freshness and accepted asset ownership remain unfinished.
 - [x] Build a bounded explainable risk model for reviewed DNS mismatches, with
   explicit impact, exposure and authorization inputs, observation binding and clipping/
   band boundary tests. This is lab triage, not calibrated general asset risk.
