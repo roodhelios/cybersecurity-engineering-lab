@@ -38,6 +38,22 @@ does not enroll a real recipient, authenticate source logs or establish reviewer
 Only this optional signature workflow needs PyNaCl; the existing DNS commands remain
 standard-library tools.
 
+To also require reviewer authority for every finding, run the separate
+[reviewer-signature exercise](projects/asset-intelligence/dns-review/README.md#require-finding-scoped-reviewer-authority):
+
+```bash
+python projects/asset-intelligence/dns-review/demo_reviewer_handoff.py
+```
+
+After the optional dependency install above, expect `reviewer_handoff_exercise_passed`,
+one finding, two verified role attestations and four rejected negative cases. The
+complete temporary workflow uses separate ephemeral recipient, risk and team keys,
+native Ed25519, synthetic saved logs and unchanged inputs. No private key is written
+to disk. Recipient requirements alone do not bind the supplied risk or team claims;
+this additional verifier requires finding/role grants, exact review-record signatures
+and a separately trusted reviewer-policy digest. It authenticates enrolled keys,
+not human identities, source truth, accepted asset ownership or remediation.
+
 ## Try it in two minutes
 
 Use Python 3.11 or newer. From the repository root, normalize the included mixed

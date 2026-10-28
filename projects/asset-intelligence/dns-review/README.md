@@ -5,6 +5,9 @@ starts the lab's asset-intelligence milestone with explicit scope, normalized ho
 records, provenance references, and an address-change review. Reviewed address rules and team routing are available below. Explicit risk triage for reviewed mismatches is available below. Accepted
 ownership, remediation, collection and broader asset correlation remain unimplemented here.
 
+For a complete synthetic handoff that requires recipient approval and authorized
+reviewer signatures, see [finding-scoped reviewer authority](#require-finding-scoped-reviewer-authority).
+
 From the repository root, use Python 3.11 or newer and the standard library:
 
 ```bash
@@ -498,10 +501,111 @@ their validity window, not one-time tokens; there is no replay ledger, network k
 lookup, rollback-resistant policy version or historical trust replay. Signing
 requirements binds review context, not source truth, collection completeness, risk
 calibration, team-response authorship, accepted ownership or remediation. Those
-reviewer and distribution contracts remain next work.
+claims need the separate reviewer verifier below. Enrollment and distribution
+contracts remain unfinished.
 
 The optional dependency is [PyNaCl 1.6.2](https://pypi.org/project/PyNaCl/1.6.2/).
 The implementation uses its documented [SigningKey and VerifyKey API](https://pynacl.readthedocs.io/en/latest/signing/),
 not custom Ed25519 arithmetic. Run the full DNS suite with PyNaCl installed:
 `python -m unittest discover -s tests -q`. Without it, signature tests are explicitly
 skipped and the authorized command fails closed; the unsigned workflow still works.
+
+## Require finding-scoped reviewer authority
+
+From the repository root, after installing the optional dependency above:
+
+```bash
+python projects/asset-intelligence/dns-review/demo_reviewer_handoff.py
+```
+
+Expect `reviewer_handoff_exercise_passed`, `finding_count: 1`,
+`attestation_count: 2`, `negative_cases_rejected: 4` and `inputs_unchanged: true`.
+The exercise builds the full saved-log workflow, recipient approval and explicit
+risk/team grants using three separate ephemeral keys. It verifies natively through
+the API and actual file-based CLI, rejects missing/altered attestations, revocation
+and a wrong reviewer-policy pin, and preserves all temporary inputs. No private
+keys are written to disk, no network or signing service is contacted and all files
+are discarded. Discarding Python references does not establish memory erasure.
+
+This solves a distinct handoff gap: a report with revised risk or team-response
+claims can reproduce and satisfy unchanged recipient requirements. Requirement
+approval never signed those supplied review records. The new verifier adds exactly
+one authorized `risk` and one authorized `team-response` signature per reproduced
+finding. It requires 1 to 1000 findings, both complete review layers and all existing
+recipient-approval checks. There is no unsigned or partial-coverage fallback.
+
+The separate reviewer policy has exactly `schema_version: 1`,
+`authority_type: dns-reviewer-authorities`, `audience`,
+`maximum_validity_seconds` and `keys`. Its audience must match the recipient policy.
+Its positive lifetime limit is at most 604800 seconds. Each of 1 to 16 keys has
+exactly `key_id`, `public_key_b64`, `status` and `grants`. Key IDs, public-key encoding,
+unique IDs/public bytes and active-only use follow the recipient-authority rules.
+Each grant has exactly `finding_sha256`, `role` and `team`. Finding digests use the
+existing `dns_ownership_review.finding_digest` contract, which binds the address
+policy, exact finding, observation instant and current address set. A risk grant
+uses `team: null`; a team-response grant names the exact routed team, as a non-empty
+bounded string (at most 64 characters, no control characters). There are at most
+2000 total grants, with no duplicate grants within a key and no wildcards.
+
+The detached bundle is `{"schema_version": 1, "attestations": [...]}`. Each
+attestation has exactly `schema_version: 1`, `attestation_type: dns-finding-review`,
+`key_id`, `audience`, `issued_at`, `expires_at`, `finding_sha256`, `role`,
+`review_record_sha256` and `signature_b64`. The record digest covers canonical JSON
+of the entire original assessment or team-response record, including review reference.
+Whitespace/order outside JSON values does not matter to that digest. It does not
+sign a score alone or substitute a hostname for the finding revision.
+The signature domain is `cybersecurity-engineering-lab:dns-finding-review:v1`
+followed by one zero byte and canonical unsigned attestation fields. Time/encoding
+rules follow recipient approvals, and issuance cannot precede the record's claimed
+observation or review time. Duplicate/unknown fields, non-finite values, missing,
+extra, repeated, wrong-role or wrong-team attestations fail. Each input policy or
+bundle remains bounded to 1 MiB. Existing source/report limits still apply.
+
+`create_attestation` is an issuer API accepting a separately managed in-memory
+PyNaCl `SigningKey`, explicit finding/role/team grant and original review record.
+It verifies the signature and grant before returning a dictionary. The helper does
+not independently establish that a supplied record is true; recipient verification
+still reproduces the complete workflow. No production key loader, enrollment,
+signing service or issuer identity directory is implemented. Use only temporary
+keys for the demo and never commit private keys or place them in CLI arguments.
+
+For retained authorized inputs, independently enroll the keys and distribute the
+reviewer policy's exact SHA-256 through a trusted channel. Do not treat a policy
+and digest delivered together by an untrusted sender as an independent trust pin.
+Retain the earlier workflow/approval inputs and invoke the new verifier:
+
+```bash
+python dns_reviewer_handoff.py report.json before.jsonl after.jsonl \
+  --scope scope.json --policy review-policy.json \
+  --requirements handoff-requirements.json --approval recipient-approval.json \
+  --authority-policy recipient-authorities.json --reviewer-policy reviewer-authorities.json \
+  --expected-reviewer-policy-sha256 INDEPENDENTLY_TRUSTED_REVIEWER_POLICY_SHA256 \
+  --attestations reviewer-attestations.json --assessment risk-assessments.json \
+  --ownership-responses ownership-responses.json --at 2026-10-28T12:00:00Z
+```
+
+Run this command from the project directory. The digest placeholder must be replaced
+with the independently trusted lowercase SHA-256, not inferred from the report.
+`--at` is an explicit fixture clock; omit it for the current UTC clock with your
+own authorized data. Both clocks remain trusted host inputs, not timestamp proofs.
+Success adds `reviewer_authority_checked: true` and a `reviewer_authority` summary
+with `attestation_count`, `risk_attestation_count`, `team_response_attestation_count`,
+policy and bundle digests. It retains the existing workflow status and recipient
+summary. No raw records, hostnames, addresses, team strings, public keys or signatures
+reach stdout. Keep counts, identifiers, times and digests private as operational metadata.
+Invalid input returns code 2 with no success output and a generic error.
+
+Every existing report field reproduces before reviewer signatures are accepted.
+Nothing mutates the report, source files, risk scores, queues or the existing
+`accepted_claim`/`declined_claim` labels. The policy authorizes enrolled keys for
+claims; it does not establish a natural person's identity, independent judgment,
+source truth, accepted asset ownership or remediation. A policy may grant one key
+both roles; separation of duties and multi-reviewer quorums are not enforced.
+Stale policy plus matching old pin can miss revocation. Policy enrollment, trusted
+distribution/freshness, key rotation and clock integrity remain external. Valid
+attestations can be reused during their window; no replay ledger or rollback-resistant
+policy version is implemented. The aggregate verification summary is unsigned.
+
+```bash
+python -m unittest discover -s tests -p test_dns_reviewer_handoff.py -v
+```
