@@ -87,8 +87,10 @@ The backlog is ordered to produce complete, reviewable systems instead of many d
   by responder service and exact reset state, selects one bounded strongest window,
   and retains original-line/digest evidence. It has a synthetic quickstart and
   private report retention. This does not establish reset injection, sender identity
-  or a deployed sensor. Retained-report reproduction and live sensor validation
-  remain unfinished.
+  or a deployed sensor. Retained reports now reproduce all fields from original
+  source bytes and independently supplied scope/window requirements, returning
+  a minimized unsigned summary. Historical model replay, source authentication
+  and live sensor validation remain unfinished.
 - [x] Add a defensive signal and expected evidence for the first exercise. Findings
   link the prior and current observation lines and explicitly avoid claiming spoofing.
   Optional DHCP-aware reconciliation distinguishes an expected reassignment from an

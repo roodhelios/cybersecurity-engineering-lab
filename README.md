@@ -70,6 +70,10 @@ This is an offline review signal, not evidence of reset injection or malicious a
 The [project guide](projects/network-defense/tcp-reset-review/README.md) explains
 input bounds, sliding windows, private retention and what the report does not prove.
 
+For a saved report, the [reproduction command](projects/network-defense/tcp-reset-review/README.md#reproduce-a-retained-report)
+checks all fields against the original log and independently supplied scope/window
+requirements. It returns counts and digests without addresses or connection IDs.
+
 Use Python 3.11 or newer. From the repository root, normalize the included mixed
 Suricata and Zeek fixture with the standard library:
 
