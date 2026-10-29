@@ -83,7 +83,12 @@ The backlog is ordered to produce complete, reviewable systems instead of many d
 
 - [x] Turn the first network lab into a reproducible, isolated exercise. The offline
   ARP consistency review uses saved synthetic metadata and never captures or sends
-  traffic. Additional network labs remain planned.
+  traffic. A second TCP reset review now groups saved Zeek JSON connection claims
+  by responder service and exact reset state, selects one bounded strongest window,
+  and retains original-line/digest evidence. It has a synthetic quickstart and
+  private report retention. This does not establish reset injection, sender identity
+  or a deployed sensor. Retained-report reproduction and live sensor validation
+  remain unfinished.
 - [x] Add a defensive signal and expected evidence for the first exercise. Findings
   link the prior and current observation lines and explicitly avoid claiming spoofing.
   Optional DHCP-aware reconciliation distinguishes an expected reassignment from an

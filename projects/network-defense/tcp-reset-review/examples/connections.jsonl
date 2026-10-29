@@ -1,0 +1,6 @@
+{"ts":1793235600.0,"uid":"Cfixture1","id.orig_h":"192.0.2.10","id.orig_p":50001,"id.resp_h":"198.51.100.20","id.resp_p":443,"proto":"tcp","conn_state":"RSTR","history":"ShADadr"}
+{"ts":1793235610.0,"uid":"Cfixture2","id.orig_h":"192.0.2.11","id.orig_p":50002,"id.resp_h":"198.51.100.20","id.resp_p":443,"proto":"tcp","conn_state":"SF","history":"ShADadFf"}
+{"ts":1793235630.0,"uid":"Cfixture3","id.orig_h":"192.0.2.12","id.orig_p":50003,"id.resp_h":"198.51.100.20","id.resp_p":443,"proto":"tcp","conn_state":"RSTR","history":"ShADadr"}
+{"ts":1793235640.0,"uid":"Cfixture4","id.orig_h":"192.0.2.13","id.orig_p":50004,"id.resp_h":"198.51.100.20","id.resp_p":443,"proto":"tcp","conn_state":"REJ","history":"Sr"}
+{"ts":1793235660.0,"uid":"Cfixture5","id.orig_h":"192.0.2.14","id.orig_p":50005,"id.resp_h":"198.51.100.20","id.resp_p":443,"proto":"tcp","conn_state":"RSTR","history":"ShADadr"}
+{"ts":1793235661.0,"uid":"Cfixture6","id.orig_h":"192.0.2.15","id.orig_p":50006,"id.resp_h":"198.51.100.20","id.resp_p":443,"proto":"tcp","conn_state":"RSTOS0","history":"SR"}
