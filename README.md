@@ -15,6 +15,7 @@ synthetic data and run locally. It does not deploy cloud resources or run malwar
 | Cloud security | Review offline IAM, CloudFormation, and Terraform plan policies, triage synthetic CloudTrail events, validate cost plans | [AWS security tools](projects/cloud-security/aws-cost-plan/README.md) |
 | Asset intelligence | Compare explicitly scoped saved DNS observations and retain source-row references | [Scoped DNS review](projects/asset-intelligence/dns-review/README.md) |
 | Network defense | Review saved ARP changes against synthetic DHCP, switch history, and expected-port policy | [Offline ARP consistency review](projects/network-defense/arp-consistency/README.md) |
+| TCP reset triage | Find repeated reset-state observations in one saved Zeek JSON connection log, with original-line evidence | [Offline TCP reset review](projects/network-defense/tcp-reset-review/README.md) |
 | Malware analysis | Validate inert behavior reports and run a pinned YARA training exercise | [Analysis exercises](projects/malware_analysis/README.md) |
 
 Already have a saved DNS workflow report? The [reproduction command](projects/asset-intelligence/dns-review/README.md#verify-a-retained-workflow)
@@ -55,6 +56,19 @@ and a separately trusted reviewer-policy digest. It authenticates enrolled keys,
 not human identities, source truth, accepted asset ownership or remediation.
 
 ## Try it in two minutes
+
+For a network-defense exercise using only saved synthetic metadata:
+
+```bash
+python projects/network-defense/tcp-reset-review/tcp_reset_review.py \
+  projects/network-defense/tcp-reset-review/examples/connections.jsonl --scope synthetic
+```
+
+Expect six records and one responder-service `RSTR` finding with three connections,
+linking original lines 1, 3 and 5. Rejections and partial reset states stay separate.
+This is an offline review signal, not evidence of reset injection or malicious activity.
+The [project guide](projects/network-defense/tcp-reset-review/README.md) explains
+input bounds, sliding windows, private retention and what the report does not prove.
 
 Use Python 3.11 or newer. From the repository root, normalize the included mixed
 Suricata and Zeek fixture with the standard library:
