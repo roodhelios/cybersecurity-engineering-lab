@@ -88,7 +88,46 @@ Each evidence item contains the original 1-based line, UID and SHA-256 of that
 line's bytes excluding its LF or CRLF terminator. The report also binds every input
 byte with `input_sha256`, including line endings. References help a reviewer inspect
 the retained source. They do not authenticate collection or establish historical
-signing time. The report is unsigned, and no retained-report verifier is provided yet.
+signing time. The report is unsigned. The reproduction command below checks the
+complete report against the source, without authenticating either artifact.
+
+## Reproduce a retained report
+
+First generate a report with the retention command above. Then supply the exact
+source and your independently chosen review requirements:
+
+```bash
+python projects/network-defense/tcp-reset-review/verify_report.py \
+  projects/network-defense/tcp-reset-review/examples/connections.jsonl \
+  /tmp/tcp-reset-review.json --scope synthetic --min-resets 3 --window-seconds 60
+```
+
+Expect `tcp_reset_report_reproduced`, six records and one finding. The command
+recomputes every report field under the current implementation: counts, complete
+findings, original-line/UID/digest evidence, scope, parameters and limitations.
+Matching only `input_sha256` is insufficient. Scope and both numerical parameters
+are required reviewer inputs, not inferred from an untrusted report. Even a
+self-consistent report made with another threshold fails those requirements.
+
+The summary contains counts, scope, parameters and exact source/report digests.
+It omits addresses, ports, connection UIDs and raw report content. Add
+`--output /tmp/tcp-reset-verification.json` for a new private 0600 summary; success
+also prints the summary. Existing destinations are preserved. Validation failures
+return exit 2, print generic stderr, produce no success JSON and do not publish.
+Publication errors can leave a completed destination; inspect before retrying.
+
+Source bytes are exact, including line endings and ignored metadata. Report JSON
+whitespace/key ordering may change because comparison uses full canonical JSON;
+the summary records the digest of the exact supplied report bytes. Duplicate fields,
+non-finite values, unknown fields, omitted findings and changed field types reject.
+Source input retains its 8 MiB limit; retained reports are bounded to 16 MiB.
+The report reader rejects final symlinks and FIFOs on POSIX. Neither input is modified.
+
+This establishes current-model consistency only. The report and summary are
+unsigned. Someone who can replace both source and report can create a matching
+pair. This is not source authentication, historical model replay, verified scope,
+packet validation, attack confirmation or a portable attestation. Retain originals
+privately and independently review the source and requirements.
 
 Counts are not traffic-normalized rates, a calibrated anomaly score or an ATT&CK
 classification. No spoofing, injection or malicious sender is inferred. Legitimate
@@ -107,5 +146,6 @@ inclusive microsecond boundary, strongest/tied windows, original-line references
 state and service isolation, malformed batches, bounded readers and a fresh-process
 CLI. No live service, packet capture, attack tool or firewall change is involved.
 
-Next: reproduce a retained report against its original input and parameters before
-using it as a review handoff. Live packet evidence and sensor validation remain separate.
+Next: consider application-context or sensor-quality evidence only after defining
+a bounded contract and useful fixtures. Live packet evidence and sensor validation
+remain separate; report reproduction is now available without those services.
