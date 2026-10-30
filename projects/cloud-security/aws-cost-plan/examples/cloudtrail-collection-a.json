@@ -1,0 +1,42 @@
+{
+  "Records": [
+    {
+      "eventVersion": "1.09",
+      "eventID": "synthetic-collection-login-1",
+      "eventTime": "2026-10-30T12:01:00Z",
+      "eventSource": "signin.amazonaws.com",
+      "eventName": "ConsoleLogin",
+      "sourceIPAddress": "192.0.2.20",
+      "userIdentity": {
+        "type": "IAMUser",
+        "userName": "fixture-analyst"
+      },
+      "responseElements": {
+        "ConsoleLogin": "Failure"
+      },
+      "additionalEventData": {
+        "MFAUsed": "No"
+      },
+      "recipientAccountID": "111122223333"
+    },
+    {
+      "eventVersion": "1.09",
+      "eventID": "synthetic-collection-login-2",
+      "eventTime": "2026-10-30T12:02:00Z",
+      "eventSource": "signin.amazonaws.com",
+      "eventName": "ConsoleLogin",
+      "sourceIPAddress": "192.0.2.20",
+      "userIdentity": {
+        "type": "IAMUser",
+        "userName": "fixture-analyst"
+      },
+      "responseElements": {
+        "ConsoleLogin": "Failure"
+      },
+      "additionalEventData": {
+        "MFAUsed": "No"
+      },
+      "recipientAccountID": "111122223333"
+    }
+  ]
+}

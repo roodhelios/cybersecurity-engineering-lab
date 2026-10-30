@@ -120,6 +120,12 @@ For a private review of phase and ATT&CK-link coverage, use
 `python -m projects.malware_analysis.report_summary projects/malware_analysis/examples/synthetic-behavior-report-v2.json`.
 Expect two claimed static observations and one unlinked observation. No sample is opened.
 
+For several saved CloudTrail exports, the [collection quickstart](projects/cloud-security/aws-cost-plan/docs/cloudtrail-collection.md)
+produces one private account-scoped case with source references, triage and login
+correlation. Its two-file synthetic example deduplicates five supplied records into
+four unique events and one login candidate. Conflicting copies fail; no AWS calls
+or response actions occur.
+
 Already have a local CloudTrail `Records` JSON or gzip export? The
 [native-file import guide](projects/cloud-security/aws-cost-plan/README.md#import-a-local-cloudtrail-records-file)
 converts it to private JSON Lines for triage and response planning without contacting AWS.

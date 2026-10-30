@@ -1,0 +1,54 @@
+{
+  "Records": [
+    {
+      "eventVersion": "1.09",
+      "eventID": "synthetic-collection-login-2",
+      "eventTime": "2026-10-30T12:02:00Z",
+      "eventSource": "signin.amazonaws.com",
+      "eventName": "ConsoleLogin",
+      "sourceIPAddress": "192.0.2.20",
+      "userIdentity": {
+        "type": "IAMUser",
+        "userName": "fixture-analyst"
+      },
+      "responseElements": {
+        "ConsoleLogin": "Failure"
+      },
+      "additionalEventData": {
+        "MFAUsed": "No"
+      },
+      "recipientAccountID": "111122223333"
+    },
+    {
+      "eventVersion": "1.09",
+      "eventID": "synthetic-collection-login-3",
+      "eventTime": "2026-10-30T12:03:00Z",
+      "eventSource": "signin.amazonaws.com",
+      "eventName": "ConsoleLogin",
+      "sourceIPAddress": "192.0.2.20",
+      "userIdentity": {
+        "type": "IAMUser",
+        "userName": "fixture-analyst"
+      },
+      "responseElements": {
+        "ConsoleLogin": "Failure"
+      },
+      "additionalEventData": {
+        "MFAUsed": "No"
+      },
+      "recipientAccountID": "111122223333"
+    },
+    {
+      "eventVersion": "1.09",
+      "eventID": "synthetic-collection-stop",
+      "eventTime": "2026-10-30T12:04:00Z",
+      "eventSource": "cloudtrail.amazonaws.com",
+      "eventName": "StopLogging",
+      "sourceIPAddress": "192.0.2.11",
+      "userIdentity": {
+        "type": "Root"
+      },
+      "recipientAccountID": "111122223333"
+    }
+  ]
+}

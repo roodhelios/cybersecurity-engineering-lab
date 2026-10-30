@@ -171,6 +171,25 @@ to the converted file: retain that file and both digests alongside the original.
 This accepts the reviewed local subset, not every AWS event variant or CloudTrail Lake
 export. Passing import does not prove that a record is authentic or a finding correct.
 
+## Combine saved files into one private case
+
+For multiple saved exports, use the [collection workflow](docs/cloudtrail-collection.md)
+instead of concatenating overlapping events or retaining separate receipts by hand:
+
+```bash
+PYTHONPATH=src python -m aws_cost_plan.cloudtrail_case \
+  examples/cloudtrail-collection-a.json examples/cloudtrail-collection-b.json \
+  --account-id 111122223333 --case-id synthetic-collection --scope-note synthetic \
+  --output /tmp/cloudtrail-case.json
+```
+
+Expect five supplied records, four unique events, one duplicate copy, five findings
+and one three-event login candidate. The new private case retains normalized records,
+per-source receipts, all source locations, triage and correlation. The required recipient
+account scope rejects mixed or missing account claims. Matching copies count once;
+conflicting copies reject the batch. No AWS API or response action is performed.
+The guide explains limits, sensitive retained fields and the ordered-input contract.
+
 ## Teardown procedure
 
 For a complete offline response exercise, follow the
