@@ -42,6 +42,12 @@ The backlog is ordered to produce complete, reviewable systems instead of many d
 - [x] Create an offline account-compromise triage and response-planning runbook.
   Local fixture commands are validated; live containment and recovery remain untested.
 
+- [x] Combine multiple explicitly supplied CloudTrail files into one private,
+  recipient-account-scoped case. Exact normalized copies across sources count once,
+  conflicts reject the collection, and receipts/source-record references feed triage
+  and login correlation. Original-source recipient reproduction and live account
+  collection remain unfinished; no response action is performed.
+
 ## Milestone 4: Safe asset intelligence
 
 - [ ] Define fixture-based asset and finding schemas. The first bounded DNS observation
