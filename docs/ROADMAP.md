@@ -83,8 +83,12 @@ The backlog is ordered to produce complete, reviewable systems instead of many d
 - [ ] Create remediation prioritization and ownership workflows. Explicit routed-team
   response claims now bind an exact DNS finding revision and preserve pending status.
   Optional local review queues now prioritize explicit risk bands and preserve
-  unassessed work, response claims and review suggestions. Authenticated acceptance,
-  reassignment and remediation remain unfinished.
+  unassessed work, response claims and review suggestions. Explicit enrolled-key
+  acceptance of one exact review task now uses a separate signature purpose,
+  independently pinned finding/team authority and a time-bounded private receipt,
+  after complete recipient/reviewer verification and source reproduction. This is
+  not accepted asset ownership, an exclusive assignment registry, reassignment or
+  remediation; those remain unfinished.
 - [ ] Document explicit authorization and scope controls.
 
 ## Milestone 5: Network and malware analysis knowledge base

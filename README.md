@@ -55,6 +55,19 @@ this additional verifier requires finding/role grants, exact review-record signa
 and a separately trusted reviewer-policy digest. It authenticates enrolled keys,
 not human identities, source truth, accepted asset ownership or remediation.
 
+To explicitly accept responsibility for reviewing one exact finding revision:
+
+```bash
+python projects/asset-intelligence/dns-review/demo_responsibility.py
+```
+
+Expect `dns_responsibility_exercise_passed`, one accepted review task and three
+rejected negative cases. This adds a separate signature purpose and independently
+pinned finding/team authority after the complete handoff checks. The
+[responsibility guide](projects/asset-intelligence/dns-review/RESPONSIBILITY.md)
+shows private receipt retention and time/trust limits. A receipt does not establish
+asset ownership, an exclusive assignment, human identity or remediation approval.
+
 ## Try it in two minutes
 
 For a network-defense exercise using only saved synthetic metadata:
