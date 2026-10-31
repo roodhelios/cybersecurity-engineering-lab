@@ -190,6 +190,12 @@ account scope rejects mixed or missing account claims. Matching copies count onc
 conflicting copies reject the batch. No AWS API or response action is performed.
 The guide explains limits, sensitive retained fields and the ordered-input contract.
 
+For a retained case, the [recipient reproduction command](docs/cloudtrail-collection.md#reproduce-a-retained-case-as-the-recipient)
+checks all fields against the original ordered files and independently supplied
+account, case, scope, threshold and window requirements. Its unsigned summary omits
+raw event/context fields. Matching hashes alone are not enough and the report cannot
+choose the recipient's detection settings.
+
 ## Teardown procedure
 
 For a complete offline response exercise, follow the

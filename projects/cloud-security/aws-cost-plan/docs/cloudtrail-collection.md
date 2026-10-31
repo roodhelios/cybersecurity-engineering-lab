@@ -102,5 +102,48 @@ and conflicting copies, scope, original source references, retained-line reprodu
 collection bounds, private output/collisions and late failure without partial output.
 These are local fixture tests. Live AWS collection, account state, telemetry completeness,
 source authentication, historical model replay and response execution remain untested.
-Next, add an independent recipient check that reproduces a retained case against all
-original ordered source files and separately supplied review requirements.
+
+## Reproduce a retained case as the recipient
+
+The saved case is untrusted input. Rebuild it from the original ordered files with
+separately chosen review requirements, rather than trusting its counts or adopting
+its threshold. For the quickstart case above, run from this project directory:
+
+```bash
+PYTHONPATH=src python -m aws_cost_plan.cloudtrail_case_verify /tmp/cloudtrail-case.json \
+  examples/cloudtrail-collection-a.json examples/cloudtrail-collection-b.json \
+  --account-id 111122223333 --case-id synthetic-collection --scope-note synthetic \
+  --threshold 3 --window-seconds 300
+```
+
+Expect `status: case_reproduced`, four unique events, one duplicate copy, five
+findings and one login candidate. The unsigned summary includes the exact case digest
+and normalized-byte digest, but omits account IDs, case/scope labels, principals,
+source addresses, file paths and raw event fields. The case and originals are unchanged.
+Use `--output NEW_PATH` to retain this summary privately without overwriting a file.
+Exit 0 means consistency under these requirements, not approval or a clean account.
+
+All five context/settings flags are required. Obtain them through the review process;
+do not blindly copy them from an untrusted report. Scope notes follow the builder's
+trimmed-text contract. Reproduction checks every field: source receipts, complete
+normalized records, duplicate-copy references, timeline, findings, correlation and
+unreviewed containment/recovery state. Unexpected/missing fields, duplicate JSON
+members, booleans or floats replacing integer fields, and non-finite numbers reject.
+JSON formatting/key order may differ, but original source bytes and order must match.
+Recompressing a gzip or reformatting a source requires rebuilding the case because
+its original-byte receipt changes, even when normalized events are identical.
+
+The case reader accepts one no-follow regular local file up to 64 MiB. Original-file
+and aggregate bounds remain those of the builder. Failures exit 2 with fixed text,
+no success summary and no new output. There are no AWS/API calls or response actions.
+
+```bash
+python -m unittest discover -s tests -p 'test_cloudtrail_case_verify.py' -v
+```
+
+This verifies current-implementation consistency against supplied bytes. It does not
+authenticate source logs, recipient requirements or the unsigned summary; establish
+telemetry completeness; prove collection scope; or implement historical model replay.
+Retain the original files, review requirements and matching implementation checkout.
+Next work is a portable retention procedure for those dependencies, with explicit
+model/version support rather than guessing how an older case should be interpreted.
