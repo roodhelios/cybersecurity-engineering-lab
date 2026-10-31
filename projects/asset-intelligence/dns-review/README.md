@@ -5,6 +5,11 @@ starts the lab's asset-intelligence milestone with explicit scope, normalized ho
 records, provenance references, and an address-change review. Reviewed address rules and team routing are available below. Explicit risk triage for reviewed mismatches is available below. Accepted
 ownership, remediation, collection and broader asset correlation remain unimplemented here.
 
+Explicit enrolled-key acceptance of responsibility for one reproduced review task is
+now available separately. Run `demo_responsibility.py` after the optional PyNaCl
+install below, or follow the [retained receipt guide](RESPONSIBILITY.md). This does
+not convert routed-team claims into asset ownership or change an existing queue.
+
 For a complete synthetic handoff that requires recipient approval and authorized
 reviewer signatures, see [finding-scoped reviewer authority](#require-finding-scoped-reviewer-authority).
 
