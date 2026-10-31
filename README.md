@@ -124,7 +124,9 @@ For several saved CloudTrail exports, the [collection quickstart](projects/cloud
 produces one private account-scoped case with source references, triage and login
 correlation. Its two-file synthetic example deduplicates five supplied records into
 four unique events and one login candidate. Conflicting copies fail; no AWS calls
-or response actions occur.
+or response actions occur. The [recipient reproduction guide](projects/cloud-security/aws-cost-plan/docs/cloudtrail-collection.md#reproduce-a-retained-case-as-the-recipient)
+checks every retained field against original ordered files and independently supplied
+review settings before returning a minimized unsigned summary.
 
 Already have a local CloudTrail `Records` JSON or gzip export? The
 [native-file import guide](projects/cloud-security/aws-cost-plan/README.md#import-a-local-cloudtrail-records-file)

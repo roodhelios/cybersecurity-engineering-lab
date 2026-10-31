@@ -45,8 +45,10 @@ The backlog is ordered to produce complete, reviewable systems instead of many d
 - [x] Combine multiple explicitly supplied CloudTrail files into one private,
   recipient-account-scoped case. Exact normalized copies across sources count once,
   conflicts reject the collection, and receipts/source-record references feed triage
-  and login correlation. Original-source recipient reproduction and live account
-  collection remain unfinished; no response action is performed.
+  and login correlation. Recipient reproduction now checks every retained field
+  against original ordered bytes and independently supplied account/context/settings,
+  returning a minimized unsigned summary. Historical model replay, source authentication
+  and live account collection remain unfinished; no response action is performed.
 
 ## Milestone 4: Safe asset intelligence
 
