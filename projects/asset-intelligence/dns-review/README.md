@@ -29,6 +29,13 @@ observed in either snapshot. `web.example.test` changes from `192.0.2.10` to
 never merge host identities. Each record links one-based row indexes in the two
 input arrays, and the report retains exact input and scope SHA-256 digests.
 
+For local conflict accounting after full signed acceptance verification, run
+`demo_assignment_journal.py`. Expect two events for one task, idempotent replay,
+expiry replacement and policy-replacement invalidation. The
+[private local journal guide](RESPONSIBILITY.md#serialize-acceptances-in-one-private-local-journal)
+shows complete retained commands, explicit predecessors and trust limits. This
+serializes one SQLite file; it does not establish global exclusivity or asset ownership.
+
 ## Input contract
 
 Scope is an exact JSON object with `schema_version: 1`, a caller-supplied `scope`
