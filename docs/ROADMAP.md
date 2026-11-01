@@ -87,8 +87,13 @@ The backlog is ordered to produce complete, reviewable systems instead of many d
   acceptance of one exact review task now uses a separate signature purpose,
   independently pinned finding/team authority and a time-bounded private receipt,
   after complete recipient/reviewer verification and source reproduction. This is
-  not accepted asset ownership, an exclusive assignment registry, reassignment or
-  remediation; those remain unfinished.
+  not accepted asset ownership or remediation. A separate private local SQLite
+  journal now serializes fully verified acceptances for an exact audience/finding,
+  rejects competing unexpired claims, handles verified replay idempotently and
+  requires an explicit predecessor after expiry or exact-byte policy replacement.
+  Native concurrent-connection tests establish one winner within that database.
+  Independent journal continuity, global exclusivity, explicit release/transfer
+  authority, policy freshness and consensual reassignment remain unfinished.
 - [ ] Document explicit authorization and scope controls.
 
 ## Milestone 5: Network and malware analysis knowledge base

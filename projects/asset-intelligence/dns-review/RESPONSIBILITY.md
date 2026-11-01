@@ -105,19 +105,151 @@ prove asset ownership, grant access, dismiss a finding, change risk, approve a r
 or perform remediation. Existing `accepted_claim` labels and review queues remain
 unchanged. Signed policy distribution and current trust remain the receiver's job.
 
-There is no persistent assignment registry, exclusivity, atomic multi-finding
-acceptance, reassignment or revocation broadcast. Repeating verification may create
+The receipt command alone has no persistent assignment registry, exclusivity,
+atomic multi-finding acceptance, reassignment or revocation broadcast. The separate
+local journal below adds conflict accounting within one host-controlled database. Repeating verification may create
 another receipt in another new file; this is not once-only task execution. Retained
 receipts are unsigned local verification results, not transferable approvals.
 Re-run full verification with current trust and time before relying on acceptance;
 an old receipt cannot establish that an authority is still active. Re-encoded or
 changed workflow bytes require a new acceptance even when the JSON values match.
 
-Next: design an append-only assignment/reassignment history with explicit conflict,
-revocation and current-state rules before claiming durable ownership workflow.
+The local journal below starts append-only conflict accounting. Independent history
+continuity and explicit release/transfer authority remain necessary before claiming
+a durable ownership workflow.
 Prepared with assistant support and synthetic local evidence, not manual acceptance
 by a real team.
 
 ```bash
 python -m unittest discover -s projects/asset-intelligence/dns-review/tests -v
 ```
+
+## Serialize acceptances in one private local journal
+
+The separate `dns_assignment_journal.py` command now retains verified receipts in a
+native SQLite journal and checks competing registrations transactionally. The older
+receipt command above remains independent and does not consult this journal.
+
+From the repository root, after the same optional PyNaCl installation:
+
+```bash
+python projects/asset-intelligence/dns-review/demo_assignment_journal.py
+```
+
+Expect `dns_assignment_journal_exercise_passed`, two retained events for one task,
+`idempotent_replay: true`, `expiry_replacement: true`,
+`policy_replacement_invalidates: true` and three rejected negative cases. Native
+Ed25519, complete source reproduction and SQLite transactions run in a temporary
+private directory with socket creation forbidden. Keys stay in memory. All claims
+use the explicit October 28 fixture clock, not a real team's acceptance.
+
+The exercise registers one short-lived acceptance, verifies its replay without
+adding another event, rejects a competing unexpired acceptance, and requires the
+exact predecessor before replacing the expired acceptance. A separately pinned
+policy with its key marked revoked then makes the latest registration ineligible
+without changing the database. No revocation is broadcast or externally performed.
+
+### Retained commands
+
+Choose an absolute path inside an owned mode-0700 directory. Initialization never
+creates a directory or replaces an existing file:
+
+```bash
+python projects/asset-intelligence/dns-review/dns_assignment_journal.py init \
+  /absolute/private/assignment.sqlite
+```
+
+Register with the same complete original evidence required by the receipt command:
+
+```bash
+python projects/asset-intelligence/dns-review/dns_assignment_journal.py register \
+  /absolute/private/assignment.sqlite \
+  --report /absolute/private/workflow.json \
+  --previous /absolute/private/before.jsonl --current /absolute/private/after.jsonl \
+  --scope /absolute/private/scope.json --policy /absolute/private/review-policy.json \
+  --requirements /absolute/private/requirements.json --approval /absolute/private/approval.json \
+  --authority-policy /absolute/private/recipient-authorities.json \
+  --reviewer-policy /absolute/private/reviewer-authorities.json \
+  --expected-reviewer-policy-sha256 INDEPENDENT_REVIEWER_POLICY_PIN \
+  --attestations /absolute/private/attestations.json \
+  --assessment /absolute/private/risk.json --ownership-responses /absolute/private/responses.json \
+  --acceptance /absolute/private/acceptance.json \
+  --acceptance-policy /absolute/private/acceptance-authorities.json \
+  --expected-acceptance-policy-sha256 INDEPENDENT_ACCEPTANCE_POLICY_PIN
+```
+
+Initial registration requires no predecessor. A replacement must add
+`--expected-predecessor SHA256_OF_LAST_REGISTERED_ACCEPTANCE_FILE`. This is the
+exact digest of the previously retained signed acceptance bytes, not the database
+or receipt digest. Retain that file privately. An independently reviewed current
+policy pin must come from outside the candidate bundle. A predecessor is a host
+concurrency condition; the acceptance signature does not itself authorize transfer
+from that predecessor or establish the previous signer's consent.
+
+Inspect minimized counts with the current independently pinned acceptance policy:
+
+```bash
+python projects/asset-intelligence/dns-review/dns_assignment_journal.py summary \
+  /absolute/private/assignment.sqlite \
+  --acceptance-policy /absolute/private/acceptance-authorities.json \
+  --expected-acceptance-policy-sha256 INDEPENDENT_ACCEPTANCE_POLICY_PIN
+```
+
+`register` returns `review_acceptance_registered`, `appended: true` and the total
+event count. An exact replay returns `already_registered`, `appended: false` only
+after full verification succeeds again. `summary` returns `event_count`,
+`task_count`, `eligible_for_reverification`, `expired`, `policy_replaced` and
+`authority_inactive`. It never returns team/key labels or finding/acceptance digests.
+These summaries are unsigned local accounting, not current authorization evidence.
+Omitting `--at` captures current UTC once; an explicit whole-second UTC fixture time
+is labeled `explicit_fixture`. Exit 2 uses a fixed diagnostic without private
+identifiers, paths or a success document. An initialization error can leave a new
+incomplete private database; inspect it privately rather than overwriting it.
+
+### State and conflict rules
+
+| Condition | Local result |
+| --- | --- |
+| First fully verified acceptance for `(audience, finding revision)` | Append an event with no predecessor |
+| Exact latest acceptance replay, still fully verifiable | Return idempotently without another event |
+| Different acceptance while the latest is unexpired under the same policy | Reject even when the predecessor matches |
+| Latest acceptance expired at `now >= expires_at` | Require a fresh fully verified acceptance and exact predecessor |
+| Any current acceptance-policy byte change | Old registration becomes `policy_replaced`, including key revocation or harmless re-encoding |
+| Replacement after policy change | Require a fresh acceptance signed for the new policy and exact predecessor |
+| Missing/stale predecessor, rollback in the task's verification clock or invalid original evidence | Reject without adding an event |
+
+The identity omits the team so a second team cannot create a parallel registration
+for the same audience and exact finding revision in this journal. Different finding
+revisions are separate tasks. Replacement is deliberately conservative: a policy
+edit invalidates every registration under its old exact-byte digest. No in-place
+rekeying, selective exception or forced takeover of an eligible task is supported.
+
+`BEGIN IMMEDIATE` serializes the history read, conflict decision and insert on one
+SQLite database. Tests use two concurrent native connections and require one winner
+for competing initial registrations. Append-only triggers prevent ordinary SQL
+updates/deletes, while bounded reads recheck contiguous sequence, predecessor links
+and receipt fields. This is not tamper-evident history: a same-user editor can forge
+internally consistent receipts or remove protections, and a deleted/replaced store
+has no external continuity checkpoint. Separate databases can accept the same task.
+
+The journal accepts owned mode-0600 regular files with one hard link, up to 8 MiB
+and 2,000 events. It stores the existing unsigned verification receipt, including
+team/key labels, digests and time claims, but no source logs, hostnames, addresses,
+private keys or signatures. Treat the database, SQLite sidecars, original evidence
+and backups as sensitive plaintext outside Git. Parent privacy protects transient
+SQLite journal files. File checks do not prevent same-user path replacement.
+Use only trusted owned directories; this is not a database-import sandbox.
+
+Eligibility considers the acceptance policy and its validity window only. Other
+recipient/reviewer policies, signatures or evidence may have changed or expired.
+`summary` does not reproduce them. Run full verification again before reliance.
+Clock checks use one caller-supplied instant before lock acquisition, not a trusted
+clock service or an execution-time deadline. Busy lock acquisition fails rather
+than bypassing conflict checks. File fsync/SQLite FULL synchronous settings do not
+establish external backup, parent-directory crash durability or secure erasure.
+
+This implements local conflict accounting and expiry/policy replacement, not global
+exclusive assignments, asset ownership, human enrollment, revocation distribution,
+consensual reassignment or remediation. Next: independently checkpoint journal
+identity/history and design explicit release/transfer authority before permitting
+forced reassignment. Implemented with assistant support and synthetic local evidence.

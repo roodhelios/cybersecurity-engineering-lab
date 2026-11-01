@@ -68,6 +68,19 @@ pinned finding/team authority after the complete handoff checks. The
 shows private receipt retention and time/trust limits. A receipt does not establish
 asset ownership, an exclusive assignment, human identity or remediation approval.
 
+To serialize fully verified DNS review acceptances in one private local journal:
+
+```bash
+python projects/asset-intelligence/dns-review/demo_assignment_journal.py
+```
+
+After the optional PyNaCl install above, expect `dns_assignment_journal_exercise_passed`,
+two events for one task and three rejected negative cases. The
+[local journal guide](projects/asset-intelligence/dns-review/RESPONSIBILITY.md#serialize-acceptances-in-one-private-local-journal)
+explains conflicting acceptances, exact predecessors, expiry and conservative policy
+replacement. Native signatures and SQLite run locally. Summary eligibility requires
+full evidence verification before reliance; this is not global ownership or remediation.
+
 ## Try it in two minutes
 
 For a network-defense exercise using only saved synthetic metadata:
