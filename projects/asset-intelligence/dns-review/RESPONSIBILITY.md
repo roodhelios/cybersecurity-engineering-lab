@@ -229,8 +229,10 @@ SQLite database. Tests use two concurrent native connections and require one win
 for competing initial registrations. Append-only triggers prevent ordinary SQL
 updates/deletes, while bounded reads recheck contiguous sequence, predecessor links
 and receipt fields. This is not tamper-evident history: a same-user editor can forge
-internally consistent receipts or remove protections, and a deleted/replaced store
-has no external continuity checkpoint. Separate databases can accept the same task.
+internally consistent receipts or remove protections. The separate
+[exact-state checkpoint](JOURNAL_CHECKPOINT.md) can detect a changed or older logical
+history against an independently retained pin; it does not authenticate that history
+or establish checkpoint freshness. Separate databases can accept the same task.
 
 The journal accepts owned mode-0600 regular files with one hard link, up to 8 MiB
 and 2,000 events. It stores the existing unsigned verification receipt, including
@@ -250,6 +252,6 @@ establish external backup, parent-directory crash durability or secure erasure.
 
 This implements local conflict accounting and expiry/policy replacement, not global
 exclusive assignments, asset ownership, human enrollment, revocation distribution,
-consensual reassignment or remediation. Next: independently checkpoint journal
-identity/history and design explicit release/transfer authority before permitting
+consensual reassignment or remediation. Next: independently enroll journal
+identity and design explicit release/transfer authority before permitting
 forced reassignment. Implemented with assistant support and synthetic local evidence.
