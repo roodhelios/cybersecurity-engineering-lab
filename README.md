@@ -81,6 +81,19 @@ explains conflicting acceptances, exact predecessors, expiry and conservative po
 replacement. Native signatures and SQLite run locally. Summary eligibility requires
 full evidence verification before reliance; this is not global ownership or remediation.
 
+To detect rollback relative to a separately retained journal checkpoint:
+
+```bash
+python projects/asset-intelligence/dns-review/demo_journal_checkpoint.py
+```
+
+Expect `dns_journal_checkpoint_exercise_passed`, a two-event checkpoint and detection
+of a restored one-event backup, with three rejected negative cases. The native
+signature/SQLite exercise also shows that an old journal and its own stale pin can
+still match. The [checkpoint guide](projects/asset-intelligence/dns-review/JOURNAL_CHECKPOINT.md)
+explains retained commands, exact-state equality and independent pin trust. This
+does not establish current authority, physical journal identity or global ownership.
+
 ## Try it in two minutes
 
 For a network-defense exercise using only saved synthetic metadata:

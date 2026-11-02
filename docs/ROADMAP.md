@@ -92,7 +92,10 @@ The backlog is ordered to produce complete, reviewable systems instead of many d
   rejects competing unexpired claims, handles verified replay idempotently and
   requires an explicit predecessor after expiry or exact-byte policy replacement.
   Native concurrent-connection tests establish one winner within that database.
-  Independent journal continuity, global exclusivity, explicit release/transfer
+  A separate exact-state checkpoint now binds every logical event row and detects
+  rollback or changed history relative to an independently retained pin. It does not
+  reverify historical signatures or establish the latest trusted checkpoint.
+  Independent journal identity/enrollment, global exclusivity, explicit release/transfer
   authority, policy freshness and consensual reassignment remain unfinished.
 - [ ] Document explicit authorization and scope controls.
 
