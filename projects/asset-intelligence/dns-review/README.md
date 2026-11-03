@@ -36,6 +36,11 @@ expiry replacement and policy-replacement invalidation. The
 shows complete retained commands, explicit predecessors and trust limits. This
 serializes one SQLite file; it does not establish global exclusivity or asset ownership.
 
+For voluntary same-key release before expiry and a fresh verified successor, run
+`demo_assignment_lifecycle.py`. The separate [version-2 guide](ASSIGNMENT_LIFECYCLE.md)
+documents current authority, explicit release/predecessor digests, native SQLite
+conflict handling and compatibility limits. This does not grant asset ownership.
+
 ## Input contract
 
 Scope is an exact JSON object with `schema_version: 1`, a caller-supplied `scope`

@@ -81,7 +81,19 @@ explains conflicting acceptances, exact predecessors, expiry and conservative po
 replacement. Native signatures and SQLite run locally. Summary eligibility requires
 full evidence verification before reliance; this is not global ownership or remediation.
 
-To detect rollback relative to a separately retained journal checkpoint:
+To voluntarily release a DNS review task before expiry and verify a successor:
+
+```bash
+python projects/asset-intelligence/dns-review/demo_assignment_lifecycle.py
+```
+
+Expect `dns_assignment_lifecycle_exercise_passed`, two acceptance events, one release
+and three rejected negative cases. The [version-2 lifecycle guide](projects/asset-intelligence/dns-review/ASSIGNMENT_LIFECYCLE.md)
+shows private commands and same-key release authority. Native signatures and SQLite
+keep fresh acceptance distinct from release. Version-1 stores/checkpoints remain
+separate. Administrative transfer and version-2 rollback detection remain unfinished.
+
+To detect rollback relative to a separately retained version-1 journal checkpoint:
 
 ```bash
 python projects/asset-intelligence/dns-review/demo_journal_checkpoint.py

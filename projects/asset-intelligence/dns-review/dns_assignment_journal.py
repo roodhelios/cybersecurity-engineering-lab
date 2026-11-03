@@ -91,6 +91,8 @@ def _state(receipt, *, policy, pin, now):
 
 class AssignmentJournal:
     """Host-controlled local history, not a transferable approval or global ownership registry."""
+    VERSION = 1
+    SQL = SCHEMA
     def __init__(self, path):
         self.path = Path(path)
         self._check()
@@ -128,7 +130,7 @@ class AssignmentJournal:
         with closing(sqlite3.connect(path)) as connection:
             connection.execute('PRAGMA journal_mode=DELETE')
             connection.execute('PRAGMA synchronous=FULL')
-            connection.executescript(SCHEMA)
+            connection.executescript(cls.SQL)
         return cls(path)
 
     @contextmanager
@@ -141,7 +143,7 @@ class AssignmentJournal:
             connection.execute('PRAGMA busy_timeout=1000')
             if not write:
                 connection.execute('PRAGMA query_only=ON')
-            if (connection.execute('PRAGMA user_version').fetchone() != (1,) or
+            if (connection.execute('PRAGMA user_version').fetchone() != (self.VERSION,) or
                     connection.execute('PRAGMA journal_mode').fetchone() != ('delete',)):
                 raise ValueError('unsupported journal database')
             schema = connection.execute("SELECT type,sql FROM sqlite_schema WHERE name='acceptance_event'").fetchall()
@@ -223,7 +225,7 @@ class AssignmentJournal:
         return dict(status='local_acceptance_journal_summary', event_count=len(rows), task_count=len(latest), **counts)
 
 
-def main(argv=None):
+def main(argv=None, *, journal_type=AssignmentJournal):
     parser = argparse.ArgumentParser(description=__doc__)
     commands = parser.add_subparsers(dest='command', required=True)
     init = commands.add_parser('init')
@@ -241,14 +243,16 @@ def main(argv=None):
                 sub.add_argument('--'+field, type=Path, required=True)
             sub.add_argument('--expected-reviewer-policy-sha256', required=True)
             sub.add_argument('--expected-predecessor')
+            if journal_type.VERSION == 2:
+                sub.add_argument('--expected-release-sha256')
     args = parser.parse_args(argv)
     try:
         if args.command == 'init':
-            AssignmentJournal.create(args.journal)
+            journal_type.create(args.journal)
             result = {'status': 'local_acceptance_journal_created'}
         else:
             now = _instant(args.at) if args.at else datetime.now(timezone.utc)
-            journal = AssignmentJournal(args.journal)
+            journal = journal_type(args.journal)
             options = dict(acceptance_policy=read_input(args.acceptance_policy),
                            expected_acceptance_policy_sha256=args.expected_acceptance_policy_sha256, now=now)
             if args.command == 'summary':
@@ -260,6 +264,8 @@ def main(argv=None):
                     ('ownership_data','ownership_responses'), ('acceptance','acceptance')):
                     options[name] = read_input(getattr(args, field))
                 options['expected_reviewer_policy_sha256'] = args.expected_reviewer_policy_sha256
+                if journal_type.VERSION == 2:
+                    options['expected_release_sha256'] = args.expected_release_sha256
                 result = journal.register(read_report(args.report), read_input(args.previous), read_input(args.current),
                     read_input(args.scope), read_input(args.policy), expected_predecessor=args.expected_predecessor, **options)
             result['verification_time_source'] = 'explicit_fixture' if args.at else 'current_utc_clock'

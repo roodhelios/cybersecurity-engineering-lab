@@ -95,8 +95,12 @@ The backlog is ordered to produce complete, reviewable systems instead of many d
   A separate exact-state checkpoint now binds every logical event row and detects
   rollback or changed history relative to an independently retained pin. It does not
   reverify historical signatures or establish the latest trusted checkpoint.
-  Independent journal identity/enrollment, global exclusivity, explicit release/transfer
-  authority, policy freshness and consensual reassignment remain unfinished.
+  A separate version-2 journal now accepts a voluntary release signed by the same
+  currently enrolled acceptance key, then requires a fresh fully verified successor
+  with exact acceptance/release predecessors. Version-1 stores/checkpoints remain
+  separate. Version-2 checkpoints, independent journal identity/enrollment, global
+  exclusivity, administrative transfer, policy freshness and cross-team consent
+  remain unfinished.
 - [ ] Document explicit authorization and scope controls.
 
 ## Milestone 5: Network and malware analysis knowledge base
