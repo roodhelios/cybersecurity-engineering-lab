@@ -110,14 +110,18 @@ means success, including valid idempotent replay; exit 2 is a fixed-diagnostic f
 
 This is host-controlled local accounting. Receipts omit raw signatures and do not
 reverify historical signatures. A database owner can rewrite or roll back files.
-Version-1 checkpoints do not cover version-2 releases; independent version-2 history
-checkpoints remain unfinished. Do not claim tamper-proof, rollback-resistant or
-globally exclusive state. Other databases can still hold conflicting assignments.
+Version-1 checkpoints do not cover version-2 releases. A separate
+[version-2 checkpoint](JOURNAL_CHECKPOINT.md#checkpoint-a-version-2-lifecycle-journal)
+now binds both tables and detects changed state relative to an independently
+retained pin. It does not establish the freshest pin or authenticated history.
+Do not claim tamper-proof or globally exclusive state. Other databases can still
+hold conflicting assignments.
 Trusted clocks, policy freshness, pin distribution and human/key enrollment remain
 external. Local SQLite tests do not establish power-loss or deployed-service behavior.
 
 Voluntary task release and separate acceptance are not cross-team asset ownership
 transfer, forced reassignment, delivery acknowledgement, remediation or proof that a
 person stopped acting. No finding, risk score, source input or access right changes.
-Next: checkpoint both version-2 event tables, then design administrative recovery and
-cross-team consent separately. Implemented with assistant support and synthetic tests.
+Next: independently enroll journals and distribute fresh pins, then design
+administrative recovery and cross-team consent separately. Implemented with
+assistant support and synthetic tests.
