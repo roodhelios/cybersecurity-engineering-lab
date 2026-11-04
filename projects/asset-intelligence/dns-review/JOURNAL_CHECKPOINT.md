@@ -136,6 +136,59 @@ file, not its parent directory. Retain the trusted implementation checkout;
 version-specific historical dispatch is absent. Existing journal schema and signed
 acceptance semantics are unchanged.
 
-Next: independently identify/enroll journals and define explicit signed release or
-transfer consent before permitting reassignment of an eligible task. Prepared with
-assistant support and original synthetic evidence.
+Next: independently identify/enroll journals and distribute fresh pins, then design
+administrative recovery and cross-team consent. Same-key voluntary release now works
+in the separate version-2 journal. Prepared with assistant support and original
+synthetic evidence.
+
+## Checkpoint a version-2 lifecycle journal
+
+Version 1 does not capture release events. Use the separate version-2 command for
+the store created by `dns_assignment_lifecycle.py`:
+
+```bash
+python projects/asset-intelligence/dns-review/demo_lifecycle_checkpoint.py
+```
+
+Expect `dns_lifecycle_checkpoint_exercise_passed`, `acceptance_count: 1`,
+`release_count: 1`, `negative_cases_rejected: 2` and `stale_pair_still_matches: true`.
+The temporary synthetic exercise uses native SQLite and real Ed25519 signatures,
+with sockets forbidden and private keys kept only in memory. It restores the
+pre-release database and detects that rollback even though the acceptance count
+is unchanged. The other rejection uses a wrong independent pin. Finally it shows
+the old database matching its own stale checkpoint and pin. This is evidence of
+the freshness limit, not a bypass of a current independently selected pin.
+
+For your owned, closed or cooperatively written private version-2 database:
+
+```bash
+python projects/asset-intelligence/dns-review/dns_lifecycle_checkpoint.py create \
+  /private/dns-lifecycle/journal.sqlite --output /private/review/lifecycle-checkpoint.json
+python projects/asset-intelligence/dns-review/dns_lifecycle_checkpoint.py verify \
+  /private/dns-lifecycle/journal.sqlite --checkpoint /private/review/lifecycle-checkpoint.json \
+  --expected-sha256 INDEPENDENTLY_RETAINED_CHECKPOINT_SHA256
+```
+
+Paths and the digest label are placeholders. Creation prints
+`dns_lifecycle_checkpoint_created` and a digest that must be retained through an
+independent trusted channel. Verification prints `dns_lifecycle_checkpoint_matched`
+only for the complete exact state. Both commands emit aggregate acceptance, release
+and task counts without identities, receipt contents, signatures or paths. Exit 2
+is a fixed-diagnostic failure. Output is a fresh private mode-0600 file and cannot
+overwrite an existing checkpoint. Reader and journal path bounds remain as above.
+
+The version-2 document has schema version 2 and a separate checkpoint type/hash
+domain. Its history digest covers every ordered column of both tables, including
+all retained receipt strings. Both existing table validators run under the same
+read-only SQLite transaction before capture. This catches changed older acceptance
+or release rows, removed releases, modified receipt formatting, valid appends and
+rollback relative to the selected exact-state pin. SQLite layout changes and
+identical logical copies can still match. Neither command migrates or accepts the
+other journal version. Existing v1 commands are unchanged.
+
+The checkpoint does not bind physical file identity, schema/trigger text, unrelated
+tables or a current authorization decision. It does not reverify historical
+signatures, prove collection truth, prevent a same-user editor from rewriting files,
+establish the latest trusted pin or gate future registration. The existing private
+path, cooperative-writer and current trusted-checkout requirements still apply.
+It is not a history signature, global assignment registry or power-loss test.

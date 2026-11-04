@@ -91,7 +91,17 @@ Expect `dns_assignment_lifecycle_exercise_passed`, two acceptance events, one re
 and three rejected negative cases. The [version-2 lifecycle guide](projects/asset-intelligence/dns-review/ASSIGNMENT_LIFECYCLE.md)
 shows private commands and same-key release authority. Native signatures and SQLite
 keep fresh acceptance distinct from release. Version-1 stores/checkpoints remain
-separate. Administrative transfer and version-2 rollback detection remain unfinished.
+separate. Administrative transfer remains unfinished. To pin both version-2 tables:
+
+```bash
+python projects/asset-intelligence/dns-review/demo_lifecycle_checkpoint.py
+```
+
+Expect `dns_lifecycle_checkpoint_exercise_passed`, one acceptance, one release and
+two rejected negative cases. A release-only rollback is detected against the current
+independent pin, while an old journal and its own stale pin can still match. The
+[version-2 checkpoint guide](projects/asset-intelligence/dns-review/JOURNAL_CHECKPOINT.md#checkpoint-a-version-2-lifecycle-journal)
+shows retained commands and explains why pin freshness remains external.
 
 To detect rollback relative to a separately retained version-1 journal checkpoint:
 

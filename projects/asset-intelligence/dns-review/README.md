@@ -41,6 +41,10 @@ For voluntary same-key release before expiry and a fresh verified successor, run
 documents current authority, explicit release/predecessor digests, native SQLite
 conflict handling and compatibility limits. This does not grant asset ownership.
 
+Run `demo_lifecycle_checkpoint.py` to pin both version-2 tables and detect a
+release-only rollback. The [checkpoint guide](JOURNAL_CHECKPOINT.md#checkpoint-a-version-2-lifecycle-journal)
+includes retained create/verify commands, version separation and stale-pin limits.
+
 ## Input contract
 
 Scope is an exact JSON object with `schema_version: 1`, a caller-supplied `scope`

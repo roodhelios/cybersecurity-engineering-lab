@@ -98,8 +98,10 @@ The backlog is ordered to produce complete, reviewable systems instead of many d
   A separate version-2 journal now accepts a voluntary release signed by the same
   currently enrolled acceptance key, then requires a fresh fully verified successor
   with exact acceptance/release predecessors. Version-1 stores/checkpoints remain
-  separate. Version-2 checkpoints, independent journal identity/enrollment, global
-  exclusivity, administrative transfer, policy freshness and cross-team consent
+  separate. A separate version-2 checkpoint now binds every acceptance and release
+  row in one read transaction and detects release-only rollback against an
+  independently retained exact-state pin. Independent journal identity/enrollment,
+  fresh pin distribution, global exclusivity, administrative transfer, policy freshness and cross-team consent
   remain unfinished.
 - [ ] Document explicit authorization and scope controls.
 
