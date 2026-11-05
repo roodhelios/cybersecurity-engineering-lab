@@ -243,8 +243,11 @@ def main(argv=None, *, journal_type=AssignmentJournal):
                 sub.add_argument('--'+field, type=Path, required=True)
             sub.add_argument('--expected-reviewer-policy-sha256', required=True)
             sub.add_argument('--expected-predecessor')
-            if journal_type.VERSION == 2:
+            if journal_type.VERSION in (2, 3):
                 sub.add_argument('--expected-release-sha256')
+        if journal_type.VERSION == 3:
+            sub.add_argument('--enrollment', required=True, type=Path)
+            sub.add_argument('--expected-enrollment-sha256', required=True)
     args = parser.parse_args(argv)
     try:
         if args.command == 'init':
@@ -252,7 +255,9 @@ def main(argv=None, *, journal_type=AssignmentJournal):
             result = {'status': 'local_acceptance_journal_created'}
         else:
             now = _instant(args.at) if args.at else datetime.now(timezone.utc)
-            journal = journal_type(args.journal)
+            journal = (journal_type.from_enrollment(args.journal, read_input(args.enrollment),
+                       expected_sha256=args.expected_enrollment_sha256) if journal_type.VERSION == 3 else
+                       journal_type(args.journal))
             options = dict(acceptance_policy=read_input(args.acceptance_policy),
                            expected_acceptance_policy_sha256=args.expected_acceptance_policy_sha256, now=now)
             if args.command == 'summary':
@@ -264,7 +269,7 @@ def main(argv=None, *, journal_type=AssignmentJournal):
                     ('ownership_data','ownership_responses'), ('acceptance','acceptance')):
                     options[name] = read_input(getattr(args, field))
                 options['expected_reviewer_policy_sha256'] = args.expected_reviewer_policy_sha256
-                if journal_type.VERSION == 2:
+                if journal_type.VERSION in (2, 3):
                     options['expected_release_sha256'] = args.expected_release_sha256
                 result = journal.register(read_report(args.report), read_input(args.previous), read_input(args.current),
                     read_input(args.scope), read_input(args.policy), expected_predecessor=args.expected_predecessor, **options)

@@ -157,20 +157,25 @@ class LifecycleJournal(AssignmentJournal):
         return dict(status='local_assignment_lifecycle_summary',event_count=len(rows),release_count=len(releases),task_count=len(latest),**counts)
 
 
-def main(argv=None):
+def main(argv=None, *, journal_type=LifecycleJournal):
     argv=list(sys.argv[1:] if argv is None else argv)
     if argv in (['--help'],['-h']):
         parser=argparse.ArgumentParser(description=__doc__,epilog='Use COMMAND --help for its arguments. Version-1 stores are not migrated.')
         parser.add_argument('command',choices=('init','register','release','summary'))
         parser.parse_args(argv)
-    if not argv or argv[0]!='release': return journal_main(argv,journal_type=LifecycleJournal)
+    if not argv or argv[0]!='release': return journal_main(argv,journal_type=journal_type)
     parser=argparse.ArgumentParser(description=__doc__); parser.add_argument('command',choices=('release',))
     parser.add_argument('journal',type=Path); parser.add_argument('--release',required=True,type=Path)
     parser.add_argument('--acceptance-policy',required=True,type=Path); parser.add_argument('--expected-acceptance-policy-sha256',required=True)
     parser.add_argument('--at',help='explicit UTC fixture instant; omit for current UTC')
+    if journal_type.VERSION == 3:
+        parser.add_argument('--enrollment',required=True,type=Path)
+        parser.add_argument('--expected-enrollment-sha256',required=True)
     args=parser.parse_args(argv)
     try:
-        result=LifecycleJournal(args.journal).release(read_input(args.release),acceptance_policy=read_input(args.acceptance_policy),
+        journal=(journal_type.from_enrollment(args.journal,read_input(args.enrollment),
+                 expected_sha256=args.expected_enrollment_sha256) if journal_type.VERSION == 3 else journal_type(args.journal))
+        result=journal.release(read_input(args.release),acceptance_policy=read_input(args.acceptance_policy),
             expected_acceptance_policy_sha256=args.expected_acceptance_policy_sha256,now=_instant(args.at) if args.at else datetime.now(timezone.utc))
         result['verification_time_source']='explicit_fixture' if args.at else 'current_utc_clock'
     except (OSError,ValueError,TypeError,KeyError,AttributeError,UnicodeError,sqlite3.DatabaseError,RecursionError,OverflowError):

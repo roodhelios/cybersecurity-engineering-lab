@@ -45,6 +45,11 @@ Run `demo_lifecycle_checkpoint.py` to pin both version-2 tables and detect a
 release-only rollback. The [checkpoint guide](JOURNAL_CHECKPOINT.md#checkpoint-a-version-2-lifecycle-journal)
 includes retained create/verify commands, version separation and stale-pin limits.
 
+For independently selected local journal identity, run `demo_journal_enrollment.py`.
+The separate [version-3 enrollment guide](JOURNAL_ENROLLMENT.md) covers init, explicit
+identity selection, pinned enrollment and identity-bound checkpoints. Existing v1/v2
+stores remain separate; no migration or fresh-pin service is implemented.
+
 ## Input contract
 
 Scope is an exact JSON object with `schema_version: 1`, a caller-supplied `scope`

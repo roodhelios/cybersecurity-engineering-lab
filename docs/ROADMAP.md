@@ -100,8 +100,11 @@ The backlog is ordered to produce complete, reviewable systems instead of many d
   with exact acceptance/release predecessors. Version-1 stores/checkpoints remain
   separate. A separate version-2 checkpoint now binds every acceptance and release
   row in one read transaction and detects release-only rollback against an
-  independently retained exact-state pin. Independent journal identity/enrollment,
-  fresh pin distribution, global exclusivity, administrative transfer, policy freshness and cross-team consent
+  independently retained exact-state pin. A separate version-3 journal now persists
+  a random identity and requires canonical independently pinned local enrollment
+  for registration, release, summary and identity-bound checkpoints. Copies retain
+  their ID; source/human identity authentication, fresh pin distribution, global
+  exclusivity, administrative transfer, policy freshness and cross-team consent
   remain unfinished.
 - [ ] Document explicit authorization and scope controls.
 
