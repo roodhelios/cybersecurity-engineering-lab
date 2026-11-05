@@ -18,7 +18,7 @@ HISTORY_DOMAIN = b'dns-assignment-lifecycle-history:v2\x00'
 
 def build_checkpoint(journal):
     """Validate and capture both tables under the same read-only transaction."""
-    if not isinstance(journal, LifecycleJournal):
+    if not isinstance(journal, LifecycleJournal) or journal.VERSION != 2:
         raise ValueError('expected a version-2 lifecycle journal')
     with journal._connection() as connection:
         acceptances, latest = journal._history(connection)

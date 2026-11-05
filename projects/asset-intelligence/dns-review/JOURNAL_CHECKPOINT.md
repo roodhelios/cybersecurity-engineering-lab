@@ -122,7 +122,9 @@ journal; the complete signed demonstration uses PyNaCl. The checkpoint reader do
 not import original evidence, re-run signatures or consult current authority policy.
 
 Logical equality is not physical file identity, collector authenticity or a globally
-current head. An independently named persistent journal identity is not implemented.
+current head. Version-1 and version-2 journals do not carry a persistent identity. The separate
+[version-3 enrollment workflow](JOURNAL_ENROLLMENT.md) now provides an explicitly
+selected local identity; it does not authenticate a machine or collector.
 A same-user editor can still create self-consistent records and issue a different
 checkpoint. The protection depends on independently retaining and selecting a trusted
 pin that the editor cannot replace. Fresh policy/revocation state and clock trust
@@ -192,3 +194,8 @@ signatures, prove collection truth, prevent a same-user editor from rewriting fi
 establish the latest trusted pin or gate future registration. The existing private
 path, cooperative-writer and current trusted-checkout requirements still apply.
 It is not a history signature, global assignment registry or power-loss test.
+
+
+For an identity-bound checkpoint, use the separate [version-3 workflow](JOURNAL_ENROLLMENT.md).
+It requires a new store and independently pinned enrollment. This v2 command remains
+an exact logical-history check and does not migrate older stores.

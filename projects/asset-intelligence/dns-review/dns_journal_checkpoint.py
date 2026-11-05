@@ -20,6 +20,8 @@ HISTORY_DOMAIN = b'dns-assignment-journal-history:v1\x00'
 
 def build_checkpoint(journal):
     """Capture all validated event rows in one read-only SQLite transaction."""
+    if not isinstance(journal, AssignmentJournal) or journal.VERSION != 1:
+        raise ValueError('expected a version-1 assignment journal')
     with journal._connection() as connection:
         rows, latest = journal._history(connection)
     history = _canonical(rows).encode('ascii')

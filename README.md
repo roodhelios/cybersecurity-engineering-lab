@@ -116,6 +116,20 @@ still match. The [checkpoint guide](projects/asset-intelligence/dns-review/JOURN
 explains retained commands, exact-state equality and independent pin trust. This
 does not establish current authority, physical journal identity or global ownership.
 
+
+To distinguish separately initialized local journals before checking their history:
+
+```bash
+python projects/asset-intelligence/dns-review/demo_journal_enrollment.py
+```
+
+Expect `dns_journal_enrollment_exercise_passed`, one acceptance, one release and
+four rejected negative cases. The separate version-3 store persists a random ID,
+requires independently pinned enrollment for lifecycle operations, and checkpoints
+identity plus both logical tables. The [journal enrollment guide](projects/asset-intelligence/dns-review/JOURNAL_ENROLLMENT.md)
+shows private setup and retained commands. Copies retain their identity; this does
+not authenticate a collector, distribute fresh pins or establish global exclusivity.
+
 ## Try it in two minutes
 
 For a network-defense exercise using only saved synthetic metadata:
