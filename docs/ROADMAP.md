@@ -131,6 +131,11 @@ The backlog is ordered to produce complete, reviewable systems instead of many d
   unexpected port, a missing rule, and missing recent forwarding evidence.
   Saved Linux IPv4 neighbor JSON can now be imported with explicit capture times
   into the same offline review, with unresolved rows counted separately.
+  A separate bounded comparison now replays two original saved input sets, matches
+  timestamp-bound mapping transitions and retains both sides' original finding and
+  supporting-input references. Complete pinned replay rejects edited comparisons.
+  Added and not-observed transitions are observation differences, not proof of new
+  incidents, deletion or resolution. No live network or remediation is involved.
   Optional import receipts bind source bytes, claimed capture times, and source row
   references to generated observations, with reproduction before publication.
 - [x] Create an inert malware behavior-report schema and bounded Python validator.
