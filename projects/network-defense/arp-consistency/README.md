@@ -170,5 +170,81 @@ live DHCP state, the completeness of a switch table, interface authorization, sw
 topology, or whether an observation was collected correctly. Keep real network
 identifiers and infrastructure exports private and out of Git.
 
-Next, add a small fixture-driven report diff so reviewers can compare two saved runs
-without losing the source-line references.
+## Compare two saved reviews
+
+From the repository root on POSIX, with Python 3.11 or newer:
+
+```bash
+python -S projects/network-defense/arp-consistency/demo_comparison.py
+```
+
+Expect `arp_comparison_exercise_passed`, one added transition, one changed transition
+and four rejected negative cases. The changed finding has the same transition
+identity but a different original line reference. All data is bundled original
+synthetic metadata, and retained files are temporary. Prepared with assistant support.
+
+For retained local inputs, choose a new output inside private trusted storage:
+
+```bash
+python -S projects/network-defense/arp-consistency/compare_reviews.py \
+  projects/network-defense/arp-consistency/examples/arp-observations.jsonl \
+  projects/network-defense/arp-consistency/examples/arp-observations-later.jsonl \
+  --scope synthetic --window-seconds 300 --forwarding-max-age-seconds 300 \
+  --output /tmp/arp-comparison.json
+```
+
+The command replays both original observation sets under the current reviewer and
+prints `arp_comparison_retained`, counts and the exact `report_sha256`. Keep that
+digest independently. Both sides can also supply `--before-leases`/`--after-leases`,
+`--before-forwarding`/`--after-forwarding` and
+`--before-port-policy`/`--after-port-policy`. A policy requires forwarding evidence
+on its own side. Each input is an explicitly supplied regular file of at most 4 MiB.
+The existing 10,000-row and 16 KiB-row contracts still apply. Empty observations
+are valid and mean no observations were supplied.
+
+Replay the complete retained result with the same original inputs and requirements:
+
+```bash
+python -S projects/network-defense/arp-consistency/compare_reviews.py \
+  projects/network-defense/arp-consistency/examples/arp-observations.jsonl \
+  projects/network-defense/arp-consistency/examples/arp-observations-later.jsonl \
+  --scope synthetic --window-seconds 300 --forwarding-max-age-seconds 300 \
+  --verify-report /tmp/arp-comparison.json \
+  --expected-report-sha256 TRUSTED_REPORT_SHA256
+```
+
+Replace the placeholder with the independently retained lowercase 64-character digest.
+Expect `arp_comparison_reproduced` and `original_inputs_replayed: true`. Verification
+compares every retained field, including input digests, parameters, counts, identities
+and complete findings. Recalculating a pin after editing a finding cannot replace
+reproduction from the originals. Changed original bytes fail even when findings match.
+Wrong pin syntax fails before file access; a mismatched report pin fails before source
+access. Source and report symlinks, directories and FIFOs are rejected without waiting.
+
+| Comparison status | Meaning |
+| --- | --- |
+| `added` | Transition key appears only in the after review |
+| `not_observed` | Transition key appears only in the before review |
+| `changed` | Same transition key, different finding context or source references |
+| `unchanged` | Same transition key and complete finding |
+
+A key covers interface, normalized IPv4, both MAC claims and both UTC timestamps.
+Repeated mappings at different times stay distinct. Ambiguous repeated transitions
+at identical timestamps reject instead of being paired arbitrarily. Event IDs are
+domain-separated hashes of those claims, not collector or device identities.
+Changing lease, forwarding or policy context can change a finding without changing
+the observation transition. Both complete findings and their side-specific line
+references remain in the private report; each source is bound by exact byte digest.
+
+Reports are bounded to 32 MiB. `--output` publishes a fresh mode-0600 file exclusively;
+existing outputs are preserved. Generation without `--output` prints the full report,
+which includes network identifiers. Retention and verification summaries contain
+only counts/digests. Invalid input exits 2 with a fixed diagnostic and no success JSON.
+Keep real originals, reports and pins private and outside Git. This is not an atomic
+filesystem snapshot or power-loss durability guarantee.
+
+These are comparisons of supplied evidence, not proof of collection completeness,
+permission, source truth, an attack or accepted remediation. Old inputs can still
+reproduce under an old pin. No authenticated freshness, historical model dispatch,
+live collection or response action is added. Next: independently define expected
+capture coverage before interpreting an absent transition as an operational change.

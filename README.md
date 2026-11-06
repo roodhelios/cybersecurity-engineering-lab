@@ -14,9 +14,22 @@ synthetic data and run locally. It does not deploy cloud resources or run malwar
 | Zero Trust | Verify signed requests, reject replay, evaluate policy fixtures, inspect hash-linked audit records | [Aegis threat model](projects/zero-trust/aegis-threat-model/README.md) |
 | Cloud security | Review offline IAM, CloudFormation, and Terraform plan policies, triage synthetic CloudTrail events, validate cost plans | [AWS security tools](projects/cloud-security/aws-cost-plan/README.md) |
 | Asset intelligence | Compare explicitly scoped saved DNS observations and retain source-row references | [Scoped DNS review](projects/asset-intelligence/dns-review/README.md) |
-| Network defense | Review saved ARP changes against synthetic DHCP, switch history, and expected-port policy | [Offline ARP consistency review](projects/network-defense/arp-consistency/README.md) |
+| Network defense | Review saved ARP changes and compare original-input reviews with preserved evidence references | [Offline ARP consistency review](projects/network-defense/arp-consistency/README.md) |
 | TCP reset triage | Find repeated reset-state observations in one saved Zeek JSON connection log, with original-line evidence | [Offline TCP reset review](projects/network-defense/tcp-reset-review/README.md) |
 | Malware analysis | Validate inert behavior reports and run a pinned YARA training exercise | [Analysis exercises](projects/malware_analysis/README.md) |
+
+To compare two saved ARP input sets without services or dependencies:
+
+```bash
+python -S projects/network-defense/arp-consistency/demo_comparison.py
+```
+
+Expect `arp_comparison_exercise_passed`, one added transition, one changed evidence
+reference and four rejected negative cases. The
+[comparison workflow](projects/network-defense/arp-consistency/README.md#compare-two-saved-reviews)
+retains both sides' original-line references and reproduces the complete comparison
+under an independently supplied digest. It uses synthetic metadata and private
+temporary files. Not observed does not mean resolved; no network traffic is sent.
 
 Already have a saved DNS workflow report? The [reproduction command](projects/asset-intelligence/dns-review/README.md#verify-a-retained-workflow)
 checks every receipt, snapshot, finding and optional review layer against the original
