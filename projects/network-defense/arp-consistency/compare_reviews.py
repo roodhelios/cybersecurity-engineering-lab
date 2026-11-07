@@ -15,6 +15,7 @@ from neighbor_import import publish
 
 MAX_INPUT_BYTES = 4 * 1024 * 1024
 MAX_REPORT_BYTES = 32 * 1024 * 1024
+MAX_INVENTORY_BYTES = 4096
 KINDS = ('observations', 'leases', 'forwarding', 'port_policy')
 
 
@@ -60,12 +61,33 @@ def _review(inputs, window_seconds, forwarding_max_age_seconds):
     return report, events
 
 
-def compare_reviews(before, after, *, scope, window_seconds=300, forwarding_max_age_seconds=300):
+def _check_inventory(inventory, before, after):
+    """Require both saved input sets to match separately selected source digests."""
+    if not isinstance(inventory, dict) or set(inventory) != {'before', 'after'}:
+        raise ValueError('expected before and after inventory')
+    for side, inputs in (('before', before), ('after', after)):
+        expected = inventory[side]
+        if (not isinstance(expected, dict) or 'observations' not in expected or
+                not expected.keys() <= set(KINDS) or not isinstance(inputs, dict) or
+                inputs.keys() != expected.keys()):
+            raise ValueError('saved input kinds differ from expected inventory')
+        for kind, data in inputs.items():
+            digest = expected[kind]
+            if not isinstance(digest, str) or re.fullmatch('[0-9a-f]{64}', digest) is None:
+                raise ValueError('expected an exact-byte source digest')
+            if not isinstance(data, bytes) or len(data) > MAX_INPUT_BYTES or _sha(data) != digest:
+                raise ValueError('saved source differs from expected inventory')
+
+
+def compare_reviews(before, after, *, scope, window_seconds=300, forwarding_max_age_seconds=300,
+                    expected_inventory=None):
     """Replay both original input sets. Absence never implies resolution or deletion."""
     if scope not in ('synthetic', 'owned', 'authorized'):
         raise ValueError('explicit authorized scope required')
     if any(type(value) is not int for value in (window_seconds, forwarding_max_age_seconds)):
         raise ValueError('integer review requirements required')
+    if expected_inventory is not None:
+        _check_inventory(expected_inventory, before, after)
     old_report, old = _review(before, window_seconds, forwarding_max_age_seconds)
     new_report, new = _review(after, window_seconds, forwarding_max_age_seconds)
     counts = dict(added=0, not_observed=0, changed=0, unchanged=0)
@@ -89,6 +111,9 @@ def compare_reviews(before, after, *, scope, window_seconds=300, forwarding_max_
         'interface, IPv4 address, both MAC claims and both UTC times. Changed includes supporting evidence or '
         'line references. Not observed does not mean resolved, removed or safe. This unsigned comparison does '
         'not authenticate collection, scope, network ownership, completeness or ARP spoofing.')
+    if expected_inventory is not None:
+        result['schema_version'] = 2
+        result['expected_inventory_sha256'] = _sha(_canonical(expected_inventory))
     if len(_canonical(result)) > MAX_REPORT_BYTES:
         raise ValueError('comparison exceeds 32 MiB')
     return result
@@ -139,6 +164,7 @@ def main(argv=None):
     for side in ('before', 'after'):
         for kind in KINDS[1:]:
             parser.add_argument('--'+side+'-'+kind.replace('_', '-'), type=Path)
+    parser.add_argument('--expected-inventory', type=Path)
     parser.add_argument('--output', type=Path)
     parser.add_argument('--verify-report', type=Path)
     parser.add_argument('--expected-report-sha256')
@@ -152,6 +178,12 @@ def main(argv=None):
             retained = _read(args.verify_report, MAX_REPORT_BYTES)
             if _sha(retained) != args.expected_report_sha256:
                 raise ValueError('wrong report pin')
+        inventory = None
+        if args.expected_inventory is not None:
+            inventory = json.loads(_read(args.expected_inventory, MAX_INVENTORY_BYTES).decode('utf-8'),
+                                   object_pairs_hook=_object_without_duplicates)
+            if not isinstance(inventory, dict):
+                raise ValueError('expected an inventory object')
         inputs = []
         for side in ('before', 'after'):
             paths = {'observations': getattr(args, side)}
@@ -159,7 +191,7 @@ def main(argv=None):
                           if getattr(args, side+'_'+kind) is not None})
             inputs.append({kind: _read(path, MAX_INPUT_BYTES) for kind, path in paths.items()})
         requirements = dict(scope=args.scope, window_seconds=args.window_seconds,
-                            forwarding_max_age_seconds=args.forwarding_max_age_seconds)
+                            forwarding_max_age_seconds=args.forwarding_max_age_seconds, expected_inventory=inventory)
         if retained is not None:
             result = verify_comparison(*inputs, retained, expected_report_sha256=args.expected_report_sha256,
                                        **requirements)

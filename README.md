@@ -27,7 +27,7 @@ python -S projects/network-defense/arp-consistency/demo_comparison.py
 Expect `arp_comparison_exercise_passed`, one added transition, one changed evidence
 reference and four rejected negative cases. The
 [comparison workflow](projects/network-defense/arp-consistency/README.md#compare-two-saved-reviews)
-retains both sides' original-line references and reproduces the complete comparison
+can enforce an independent inventory of expected source files, retains both sides' original-line references and reproduces the complete comparison
 under an independently supplied digest. It uses synthetic metadata and private
 temporary files. Not observed does not mean resolved; no network traffic is sent.
 

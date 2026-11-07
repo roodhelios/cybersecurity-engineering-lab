@@ -31,6 +31,48 @@ class ComparisonTests(unittest.TestCase):
     def compare(self, after=None, **options):
         return comparison.compare_reviews(self.before, after or self.before, scope='synthetic', **options)
 
+    def test_expected_inventory_rejects_missing_context_and_empty_substitute(self):
+        after = self.before | {'leases': b''}
+        inventory = {
+            'before': {'observations': comparison._sha(self.before['observations'])},
+            'after': {kind: comparison._sha(data) for kind, data in after.items()},
+        }
+        report = self.compare(after, expected_inventory=inventory)
+        self.assertEqual(report['schema_version'], 2)
+        for substitute in (self.before, after | {'observations': b''},
+                           after | {'forwarding': b''}):
+            with self.subTest(kinds=list(substitute)), self.assertRaises(ValueError):
+                self.compare(substitute, expected_inventory=inventory)
+        self.assertEqual(self.compare(after)['schema_version'], 1)
+
+    def test_expected_inventory_is_required_again_when_replaying(self):
+        pins = {'observations': comparison._sha(self.before['observations'])}
+        inventory = {'before': pins, 'after': pins.copy()}
+        retained = comparison._canonical(self.compare(expected_inventory=inventory))
+        options = dict(expected_report_sha256=comparison._sha(retained), scope='synthetic')
+        comparison.verify_comparison(self.before, self.before, retained,
+                                     expected_inventory=inventory, **options)
+        with self.assertRaises(ValueError):
+            comparison.verify_comparison(self.before, self.before, retained, **options)
+        with self.assertRaises(ValueError):
+            self.compare(expected_inventory={'before': pins, 'after': {'observations': 'invalid'}})
+
+    def test_inventory_cli_rejects_bad_inventory_without_creating_report(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            original = root/'original'
+            original.write_bytes(self.before['observations'])
+            inventory = root/'inventory.json'
+            report = root/'report.json'
+            args = [str(original), str(original), '--scope', 'synthetic',
+                    '--expected-inventory', str(inventory), '--output', str(report)]
+            for invalid in (b'null', b'{"before":{},"before":{},"after":{}}',
+                            b' '*4097, b'{"before":{},"after":{}}'):
+                inventory.write_bytes(invalid)
+                with redirect_stderr(StringIO()), redirect_stdout(StringIO()):
+                    self.assertEqual(comparison.main(args), 2)
+                self.assertFalse(report.exists())
+
     def test_unchanged_review_retains_both_original_line_references(self):
         result = self.compare()
         self.assertEqual(result['counts'], dict(added=0, not_observed=0, changed=0, unchanged=1))

@@ -172,6 +172,29 @@ identifiers and infrastructure exports private and out of Git.
 
 ## Compare two saved reviews
 
+If the original inputs have been selected independently, pass an inventory of
+exact SHA-256 digests for each side. For example, from this directory:
+
+```bash
+python -S compare_reviews.py examples/arp-observations.jsonl \
+  examples/arp-observations-later.jsonl --scope synthetic \
+  --expected-inventory examples/expected-comparison-inputs.json
+```
+
+The version 2 report includes an inventory digest and counts of one added and
+one changed transition. The inventory maps `before` and `after` to their
+expected input kinds and lowercase SHA-256 digests. Both sides must include
+`observations`; list `leases`, `forwarding` and `port_policy` only where those
+inputs are expected. A missing, extra or byte-different input stops the comparison.
+Pass the same independently retained inventory again when verifying a version 2
+report. Without the inventory, the original version 1 workflow still works.
+
+Keep the inventory separately from the evidence being checked. Generating it from
+the files under review only records their current bytes. The inventory does not
+prove that collection was complete, that traffic was authentic, or that a
+missing observation was resolved.
+
+
 From the repository root on POSIX, with Python 3.11 or newer:
 
 ```bash

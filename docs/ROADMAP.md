@@ -134,6 +134,8 @@ The backlog is ordered to produce complete, reviewable systems instead of many d
   A separate bounded comparison now replays two original saved input sets, matches
   timestamp-bound mapping transitions and retains both sides' original finding and
   supporting-input references. Complete pinned replay rejects edited comparisons.
+  An optional independent input inventory rejects omitted or substituted sources
+  before comparison and is required again for replay of inventory-bound reports.
   Added and not-observed transitions are observation differences, not proof of new
   incidents, deletion or resolution. No live network or remediation is involved.
   Optional import receipts bind source bytes, claimed capture times, and source row
