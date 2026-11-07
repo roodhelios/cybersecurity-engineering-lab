@@ -271,3 +271,53 @@ permission, source truth, an attack or accepted remediation. Old inputs can stil
 reproduce under an old pin. No authenticated freshness, historical model dispatch,
 live collection or response action is added. Next: independently define expected
 capture coverage before interpreting an absent transition as an operational change.
+
+### Replay a saved neighbor import during comparison
+
+A version 3 comparison can verify an import receipt against the original Linux
+neighbor snapshots. List `neighbor_receipt` in the expected inventory for each
+side that needs replay. Supply that side's receipt and repeat its
+`--SIDE-neighbor-snapshot OBSERVED_AT PATH` option in chronological order.
+The comparison checks the receipt digest, reconstructs its source row mapping,
+and checks that the reconstructed observations match the comparison input
+byte for byte. The same receipt and originals are required when verifying the
+retained report. Version 1 and 2 commands still work as before.
+
+Run this synthetic example from the project directory. It creates a trusted
+fixture inventory locally to demonstrate the format. For real handoffs, use a
+separately retained inventory rather than generating one from untrusted inputs.
+
+```bash
+work=$(mktemp -d)
+first=(--snapshot 2026-10-21T12:00:00Z examples/neighbors-before.json)
+second=(--snapshot 2026-10-21T12:01:00Z examples/neighbors-after.json)
+python -S neighbor_import.py "${first[@]}" --output "$work/before"
+python -S neighbor_import.py "${first[@]}" "${second[@]}" --output "$work/after"
+python -S neighbor_import.py "${first[@]}" "${second[@]}" --format receipt --output "$work/receipt"
+python -S - "$work" <<'PY'
+import hashlib, json, sys
+from pathlib import Path
+
+root = Path(sys.argv[1])
+def digest(name):
+    return hashlib.sha256((root / name).read_bytes()).hexdigest()
+
+(root / "inventory").write_text(json.dumps({
+    "before": {"observations": digest("before")},
+    "after": {"observations": digest("after"), "neighbor_receipt": digest("receipt")},
+}))
+PY
+review=("$work/before" "$work/after" --scope synthetic
+  --expected-inventory "$work/inventory" --after-neighbor-receipt "$work/receipt"
+  --after-neighbor-snapshot 2026-10-21T12:00:00Z examples/neighbors-before.json
+  --after-neighbor-snapshot 2026-10-21T12:01:00Z examples/neighbors-after.json)
+python -S compare_reviews.py "${review[@]}" --output "$work/report"
+pin=$(sha256sum "$work/report" | cut -d ' ' -f 1)
+python -S compare_reviews.py "${review[@]}" --verify-report "$work/report" --expected-report-sha256 "$pin"
+rm -rf "$work"
+```
+
+Expect `arp_comparison_retained` followed by `arp_comparison_reproduced` and
+one added transition. The report binds the receipt digest without copying
+the receipt or its source rows into the report. The receipt is unsigned, and
+replay does not authenticate capture times, collection scope, or network traffic.
