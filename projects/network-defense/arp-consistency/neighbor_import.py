@@ -100,6 +100,18 @@ def import_snapshots(snapshots) -> tuple[str, dict]:
     return rendered, receipt
 
 
+def replay_receipt(snapshots, saved: bytes) -> tuple[str, dict]:
+    """Reproduce the observations only if every retained receipt field matches."""
+    if len(saved) > MAX_SNAPSHOT_BYTES:
+        raise ObservationError("receipt exceeds 4 MiB")
+    expected = json.loads(saved.decode("utf-8"), object_pairs_hook=_object_without_duplicates)
+    rendered, receipt = import_snapshots(snapshots)
+    if (json.dumps(expected, sort_keys=True, separators=(",", ":")) !=
+            json.dumps(receipt, sort_keys=True, separators=(",", ":"))):
+        raise ObservationError("receipt does not reproduce from retained snapshots")
+    return rendered, receipt
+
+
 def read_snapshot(path: Path) -> bytes:
     flags = os.O_RDONLY | os.O_NONBLOCK | os.O_NOFOLLOW
     with os.fdopen(os.open(path, flags), "rb") as source:
@@ -137,16 +149,10 @@ def main(argv=None) -> int:
             raise ObservationError("private snapshot import requires POSIX")
         if args.verify_receipt and args.format != "observations":
             raise ObservationError("receipt verification requires observations format")
-        rendered, receipt = import_snapshots(args.snapshot)
-        canonical_receipt = json.dumps(receipt, sort_keys=True, separators=(",", ":"))
         if args.verify_receipt:
-            saved = read_snapshot(args.verify_receipt)
-            if len(saved) > MAX_SNAPSHOT_BYTES:
-                raise ObservationError("receipt exceeds 4 MiB")
-            expected = json.loads(saved.decode("utf-8"),
-                                  object_pairs_hook=_object_without_duplicates)
-            if json.dumps(expected, sort_keys=True, separators=(",", ":")) != canonical_receipt:
-                raise ObservationError("receipt does not reproduce from retained snapshots")
+            rendered, receipt = replay_receipt(args.snapshot, read_snapshot(args.verify_receipt))
+        else:
+            rendered, receipt = import_snapshots(args.snapshot)
         if args.format == "receipt":
             rendered = json.dumps(receipt, sort_keys=True, indent=2) + "\n"
         if args.output:

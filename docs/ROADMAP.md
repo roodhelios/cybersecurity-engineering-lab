@@ -140,6 +140,8 @@ The backlog is ordered to produce complete, reviewable systems instead of many d
   incidents, deletion or resolution. No live network or remediation is involved.
   Optional import receipts bind source bytes, claimed capture times, and source row
   references to generated observations, with reproduction before publication.
+  A version 3 comparison replays independently inventoried neighbor receipts
+  against the original snapshots and matches their generated observation bytes.
 - [x] Create an inert malware behavior-report schema and bounded Python validator.
 - [x] Add a bounded YARA exercise using a non-malicious text fixture. The wrapper
   requires an installed YARA CLI and does not claim that a literal match proves

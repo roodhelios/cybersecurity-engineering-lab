@@ -73,6 +73,51 @@ class ComparisonTests(unittest.TestCase):
                     self.assertEqual(comparison.main(args), 2)
                 self.assertFalse(report.exists())
 
+    def test_neighbor_receipt_cli_round_trip_and_changed_original(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            snapshot = root/'snapshot.json'
+            snapshot.write_bytes((ROOT/'examples/neighbors-after.json').read_bytes())
+            when = '2026-10-21T12:00:00Z'
+            from neighbor_import import import_snapshots
+            observations, receipt = import_snapshots([(when, snapshot)])
+            paths = {name: root/name for name in ('receipt', 'observations', 'inventory', 'report')}
+            paths['receipt'].write_bytes(comparison._canonical(receipt))
+            paths['observations'].write_bytes(observations.encode())
+            pins = {'observations': comparison._sha(paths['observations'].read_bytes())}
+            inventory = {'before': pins, 'after': pins | {
+                'neighbor_receipt': comparison._sha(paths['receipt'].read_bytes())}}
+            paths['inventory'].write_bytes(comparison._canonical(inventory))
+            args = [str(paths['observations'])]*2 + [
+                '--scope', 'synthetic', '--expected-inventory', str(paths['inventory']),
+                '--after-neighbor-receipt', str(paths['receipt']),
+                '--after-neighbor-snapshot', when, str(snapshot),
+            ]
+            with redirect_stdout(StringIO()):
+                self.assertEqual(comparison.main(args + ['--output', str(paths['report'])]), 0)
+            saved = paths['report'].read_bytes()
+            self.assertEqual(json.loads(saved)['schema_version'], 3)
+            verify = ['--verify-report', str(paths['report']), '--expected-report-sha256',
+                      comparison._sha(saved)]
+            with redirect_stdout(StringIO()):
+                self.assertEqual(comparison.main(args + verify), 0)
+            with redirect_stdout(StringIO()), redirect_stderr(StringIO()):
+                self.assertEqual(comparison.main(args[:-5] + verify), 2)
+                snapshot.write_bytes(snapshot.read_bytes() + b' ')
+                self.assertEqual(comparison.main(args + verify), 2)
+
+    def test_neighbor_receipt_cannot_certify_unrelated_observation_bytes(self):
+        from neighbor_import import import_snapshots
+        snapshots = [('2026-10-21T12:00:00Z', ROOT/'examples/neighbors-after.json')]
+        _, receipt = import_snapshots(snapshots)
+        saved = comparison._canonical(receipt)
+        pins = {'observations': comparison._sha(self.before['observations'])}
+        inventory = {'before': pins, 'after': pins | {'neighbor_receipt': comparison._sha(saved)}}
+        with self.assertRaisesRegex(ValueError, 'observations differ'):
+            self.compare(expected_inventory=inventory, neighbor_sources={'after': (saved, snapshots)})
+        with self.assertRaisesRegex(ValueError, 'requires an independent'):
+            self.compare(neighbor_sources={'after': (saved, snapshots)})
+
     def test_unchanged_review_retains_both_original_line_references(self):
         result = self.compare()
         self.assertEqual(result['counts'], dict(added=0, not_observed=0, changed=0, unchanged=1))

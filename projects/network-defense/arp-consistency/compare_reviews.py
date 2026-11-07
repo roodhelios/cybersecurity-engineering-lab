@@ -11,7 +11,7 @@ import stat
 import sys
 
 from arp_consistency import _object_without_duplicates, parse_observation, review_lines
-from neighbor_import import publish
+from neighbor_import import publish, replay_receipt
 
 MAX_INPUT_BYTES = 4 * 1024 * 1024
 MAX_REPORT_BYTES = 32 * 1024 * 1024
@@ -61,14 +61,16 @@ def _review(inputs, window_seconds, forwarding_max_age_seconds):
     return report, events
 
 
-def _check_inventory(inventory, before, after):
+def _check_inventory(inventory, before, after, neighbor_sources):
     """Require both saved input sets to match separately selected source digests."""
     if not isinstance(inventory, dict) or set(inventory) != {'before', 'after'}:
         raise ValueError('expected before and after inventory')
     for side, inputs in (('before', before), ('after', after)):
         expected = inventory[side]
+        if side in neighbor_sources and isinstance(inputs, dict):
+            inputs = {**inputs, 'neighbor_receipt': neighbor_sources[side][0]}
         if (not isinstance(expected, dict) or 'observations' not in expected or
-                not expected.keys() <= set(KINDS) or not isinstance(inputs, dict) or
+                not expected.keys() <= {*KINDS, 'neighbor_receipt'} or not isinstance(inputs, dict) or
                 inputs.keys() != expected.keys()):
             raise ValueError('saved input kinds differ from expected inventory')
         for kind, data in inputs.items():
@@ -80,14 +82,31 @@ def _check_inventory(inventory, before, after):
 
 
 def compare_reviews(before, after, *, scope, window_seconds=300, forwarding_max_age_seconds=300,
-                    expected_inventory=None):
+                    expected_inventory=None, neighbor_sources=None):
     """Replay both original input sets. Absence never implies resolution or deletion."""
     if scope not in ('synthetic', 'owned', 'authorized'):
         raise ValueError('explicit authorized scope required')
     if any(type(value) is not int for value in (window_seconds, forwarding_max_age_seconds)):
         raise ValueError('integer review requirements required')
+    if neighbor_sources is None:
+        neighbor_sources = {}
+    if (not isinstance(neighbor_sources, dict) or not neighbor_sources.keys() <= {'before', 'after'}
+            or (neighbor_sources and expected_inventory is None)):
+        raise ValueError('neighbor receipt replay requires an independent input inventory')
+    if any(isinstance(inputs, dict) and 'neighbor_receipt' in inputs for inputs in (before, after)):
+        raise ValueError('supply neighbor receipts separately from review inputs')
     if expected_inventory is not None:
-        _check_inventory(expected_inventory, before, after)
+        _check_inventory(expected_inventory, before, after, neighbor_sources)
+    receipt_digests = {}
+    for side, inputs in (('before', before), ('after', after)):
+        if side in neighbor_sources:
+            saved, snapshots = neighbor_sources[side]
+            if not snapshots:
+                raise ValueError('neighbor receipt replay requires at least one original snapshot')
+            rendered, _ = replay_receipt(snapshots, saved)
+            if rendered.encode('utf-8') != inputs['observations']:
+                raise ValueError('observations differ from verified neighbor import')
+            receipt_digests[side] = _sha(saved)
     old_report, old = _review(before, window_seconds, forwarding_max_age_seconds)
     new_report, new = _review(after, window_seconds, forwarding_max_age_seconds)
     counts = dict(added=0, not_observed=0, changed=0, unchanged=0)
@@ -114,6 +133,9 @@ def compare_reviews(before, after, *, scope, window_seconds=300, forwarding_max_
     if expected_inventory is not None:
         result['schema_version'] = 2
         result['expected_inventory_sha256'] = _sha(_canonical(expected_inventory))
+    if receipt_digests:
+        result['schema_version'] = 3
+        result['replayed_neighbor_receipts'] = receipt_digests
     if len(_canonical(result)) > MAX_REPORT_BYTES:
         raise ValueError('comparison exceeds 32 MiB')
     return result
@@ -162,6 +184,9 @@ def main(argv=None):
     parser.add_argument('--window-seconds', type=int, default=300)
     parser.add_argument('--forwarding-max-age-seconds', type=int, default=300)
     for side in ('before', 'after'):
+        parser.add_argument('--'+side+'-neighbor-receipt', type=Path)
+        parser.add_argument('--'+side+'-neighbor-snapshot', nargs=2, action='append',
+                            metavar=('OBSERVED_AT', 'PATH'))
         for kind in KINDS[1:]:
             parser.add_argument('--'+side+'-'+kind.replace('_', '-'), type=Path)
     parser.add_argument('--expected-inventory', type=Path)
@@ -185,13 +210,21 @@ def main(argv=None):
             if not isinstance(inventory, dict):
                 raise ValueError('expected an inventory object')
         inputs = []
+        neighbor_sources = {}
         for side in ('before', 'after'):
+            receipt = getattr(args, side+'_neighbor_receipt')
+            snapshots = getattr(args, side+'_neighbor_snapshot')
+            if bool(receipt) != bool(snapshots):
+                raise ValueError('neighbor receipt and snapshots must be supplied together')
+            if receipt:
+                neighbor_sources[side] = (_read(receipt, MAX_INPUT_BYTES), snapshots)
             paths = {'observations': getattr(args, side)}
             paths.update({kind: getattr(args, side+'_'+kind) for kind in KINDS[1:]
                           if getattr(args, side+'_'+kind) is not None})
             inputs.append({kind: _read(path, MAX_INPUT_BYTES) for kind, path in paths.items()})
         requirements = dict(scope=args.scope, window_seconds=args.window_seconds,
-                            forwarding_max_age_seconds=args.forwarding_max_age_seconds, expected_inventory=inventory)
+                            forwarding_max_age_seconds=args.forwarding_max_age_seconds, expected_inventory=inventory,
+                            neighbor_sources=neighbor_sources)
         if retained is not None:
             result = verify_comparison(*inputs, retained, expected_report_sha256=args.expected_report_sha256,
                                        **requirements)
