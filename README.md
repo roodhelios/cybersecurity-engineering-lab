@@ -29,7 +29,7 @@ reference and four rejected negative cases. The
 [comparison workflow](projects/network-defense/arp-consistency/README.md#compare-two-saved-reviews)
 can enforce an independent inventory of expected source files, retains both sides' original-line references and reproduces the complete comparison
 under an independently supplied digest. The [neighbor receipt walkthrough](projects/network-defense/arp-consistency/README.md#replay-a-saved-neighbor-import-during-comparison)
-checks the original Linux snapshots when reviewing their generated observations.
+checks the original Linux snapshots and can locate the source rows for a verified transition.
 The examples use synthetic metadata and private
 temporary files. Not observed does not mean resolved; no network traffic is sent.
 

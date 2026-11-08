@@ -142,6 +142,7 @@ The backlog is ordered to produce complete, reviewable systems instead of many d
   references to generated observations, with reproduction before publication.
   A version 3 comparison replays independently inventoried neighbor receipts
   against the original snapshots and matches their generated observation bytes.
+  A pinned comparison can also locate both source rows for one selected transition.
 - [x] Create an inert malware behavior-report schema and bounded Python validator.
 - [x] Add a bounded YARA exercise using a non-malicious text fixture. The wrapper
   requires an installed YARA CLI and does not claim that a literal match proves

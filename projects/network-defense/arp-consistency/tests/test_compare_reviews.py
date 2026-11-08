@@ -106,6 +106,50 @@ class ComparisonTests(unittest.TestCase):
                 snapshot.write_bytes(snapshot.read_bytes() + b' ')
                 self.assertEqual(comparison.main(args + verify), 2)
 
+    def test_locate_event_maps_generated_lines_to_original_snapshot_rows(self):
+        from neighbor_import import import_snapshots
+        originals = [
+            ('2026-10-21T12:00:00Z', ROOT/'examples/neighbors-before.json'),
+            ('2026-10-21T12:01:00Z', ROOT/'examples/neighbors-after.json'),
+        ]
+        old, _ = import_snapshots(originals[:1])
+        new, receipt = import_snapshots(originals)
+        saved_receipt = comparison._canonical(receipt)
+        before, after = {'observations': old.encode()}, {'observations': new.encode()}
+        inventory = {side: {'observations': comparison._sha(data['observations'])}
+                     for side, data in (('before', before), ('after', after))}
+        inventory['after']['neighbor_receipt'] = comparison._sha(saved_receipt)
+        requirements = dict(scope='synthetic', expected_inventory=inventory,
+                            neighbor_sources={'after': (saved_receipt, originals)})
+        report = comparison.compare_reviews(before, after, **requirements)
+        event_id = report['transitions'][0]['event_id']
+        retained = comparison._canonical(report)
+        pin = comparison._sha(retained)
+        verified = comparison.verify_comparison(before, after, retained,
+            expected_report_sha256=pin, event_id=event_id, **requirements)
+        lookup = verified['source_lookup']
+        self.assertEqual(lookup['transition_status'], 'added')
+        self.assertEqual(lookup['before'], {'status': 'not_observed'})
+        self.assertEqual(lookup['after']['status'], 'located')
+        for index, label in enumerate(('previous', 'current'), 1):
+            row = lookup['after'][label]
+            self.assertEqual((row['observation_line'], row['snapshot_index'], row['source_row']), (index, index, 1))
+            self.assertEqual(row['input_sha256'], comparison._sha(originals[index-1][1].read_bytes()))
+        self.assertNotIn(str(ROOT), json.dumps(lookup))
+        self.assertNotIn('source_lookup', report)
+        with self.assertRaisesRegex(ValueError, 'transition not found'):
+            comparison.verify_comparison(before, after, retained,
+                expected_report_sha256=pin, event_id='0'*64, **requirements)
+        with self.assertRaises(ValueError):
+            comparison.verify_comparison(before, after, retained,
+                expected_report_sha256='0'*64, event_id=event_id, **requirements)
+
+    def test_cli_rejects_lookup_without_pinned_verification(self):
+        with redirect_stdout(StringIO()) as output, redirect_stderr(StringIO()):
+            self.assertEqual(comparison.main(['before', 'after', '--scope', 'synthetic',
+                                             '--locate-event', '0'*64]), 2)
+        self.assertEqual(output.getvalue(), '')
+
     def test_neighbor_receipt_cannot_certify_unrelated_observation_bytes(self):
         from neighbor_import import import_snapshots
         snapshots = [('2026-10-21T12:00:00Z', ROOT/'examples/neighbors-after.json')]

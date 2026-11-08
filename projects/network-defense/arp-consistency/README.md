@@ -314,6 +314,9 @@ review=("$work/before" "$work/after" --scope synthetic
 python -S compare_reviews.py "${review[@]}" --output "$work/report"
 pin=$(sha256sum "$work/report" | cut -d ' ' -f 1)
 python -S compare_reviews.py "${review[@]}" --verify-report "$work/report" --expected-report-sha256 "$pin"
+event=$(python -S -c 'import json, sys; print(json.load(open(sys.argv[1]))["transitions"][0]["event_id"])' "$work/report")
+python -S compare_reviews.py "${review[@]}" --verify-report "$work/report" \
+  --expected-report-sha256 "$pin" --locate-event "$event"
 rm -rf "$work"
 ```
 
@@ -321,3 +324,14 @@ Expect `arp_comparison_retained` followed by `arp_comparison_reproduced` and
 one added transition. The report binds the receipt digest without copying
 the receipt or its source rows into the report. The receipt is unsigned, and
 replay does not authenticate capture times, collection scope, or network traffic.
+
+
+The final command locates one event only after full pinned verification. In this
+fixture, `before.status` is `not_observed`. The `after` side locates the
+previous and current observation at row 1 of snapshot 1 and snapshot 2,
+respectively. Indices are one-based and follow the supplied snapshot order.
+Each location includes the original snapshot digest and generated observation
+line. A finding on a side without a replayed receipt is marked
+`no_replayed_receipt`. The lookup prints no source path or row contents, and
+does not change the retained report. Treat the identifiers and digests as
+private evidence metadata.
