@@ -84,6 +84,14 @@ def _check_inventory(inventory, before, after, neighbor_sources):
 def compare_reviews(before, after, *, scope, window_seconds=300, forwarding_max_age_seconds=300,
                     expected_inventory=None, neighbor_sources=None):
     """Replay both original input sets. Absence never implies resolution or deletion."""
+    report, _ = _compare_reviews(before, after, scope=scope, window_seconds=window_seconds,
+                                 forwarding_max_age_seconds=forwarding_max_age_seconds,
+                                 expected_inventory=expected_inventory, neighbor_sources=neighbor_sources)
+    return report
+
+
+def _compare_reviews(before, after, *, scope, window_seconds=300, forwarding_max_age_seconds=300,
+                     expected_inventory=None, neighbor_sources=None):
     if scope not in ('synthetic', 'owned', 'authorized'):
         raise ValueError('explicit authorized scope required')
     if any(type(value) is not int for value in (window_seconds, forwarding_max_age_seconds)):
@@ -97,13 +105,13 @@ def compare_reviews(before, after, *, scope, window_seconds=300, forwarding_max_
         raise ValueError('supply neighbor receipts separately from review inputs')
     if expected_inventory is not None:
         _check_inventory(expected_inventory, before, after, neighbor_sources)
-    receipt_digests = {}
+    receipt_digests, replayed = {}, {}
     for side, inputs in (('before', before), ('after', after)):
         if side in neighbor_sources:
             saved, snapshots = neighbor_sources[side]
             if not snapshots:
                 raise ValueError('neighbor receipt replay requires at least one original snapshot')
-            rendered, _ = replay_receipt(snapshots, saved)
+            rendered, replayed[side] = replay_receipt(snapshots, saved)
             if rendered.encode('utf-8') != inputs['observations']:
                 raise ValueError('observations differ from verified neighbor import')
             receipt_digests[side] = _sha(saved)
@@ -138,20 +146,45 @@ def compare_reviews(before, after, *, scope, window_seconds=300, forwarding_max_
         result['replayed_neighbor_receipts'] = receipt_digests
     if len(_canonical(result)) > MAX_REPORT_BYTES:
         raise ValueError('comparison exceeds 32 MiB')
-    return result
+    return result, replayed
 
 
-def verify_comparison(before, after, retained, *, expected_report_sha256, **requirements):
+def verify_comparison(before, after, retained, *, expected_report_sha256, event_id=None, **requirements):
     _pin(expected_report_sha256)
     if (not isinstance(retained, bytes) or not 0 < len(retained) <= MAX_REPORT_BYTES or
             _sha(retained) != expected_report_sha256):
         raise ValueError('comparison differs from the independent digest')
     document = json.loads(retained.decode('utf-8'), object_pairs_hook=_object_without_duplicates)
-    rebuilt = compare_reviews(before, after, **requirements)
+    rebuilt, replayed = _compare_reviews(before, after, **requirements)
     if _canonical(document) != _canonical(rebuilt):
         raise ValueError('comparison does not reproduce from original inputs and requirements')
-    return dict(status='arp_comparison_reproduced', report_sha256=expected_report_sha256,
-                counts=rebuilt['counts'], original_inputs_replayed=True)
+    result = dict(status='arp_comparison_reproduced', report_sha256=expected_report_sha256,
+                  counts=rebuilt['counts'], original_inputs_replayed=True)
+    if event_id is not None:
+        _pin(event_id)
+        if not replayed:
+            raise ValueError('source lookup requires at least one verified neighbor receipt')
+        event = next((item for item in rebuilt['transitions'] if item['event_id'] == event_id), None)
+        if event is None:
+            raise ValueError('transition not found in verified comparison')
+        sides = {}
+        for side in ('before', 'after'):
+            finding = event[side]
+            if finding is None:
+                sides[side] = {'status': 'not_observed'}
+            elif side not in replayed:
+                sides[side] = {'status': 'no_replayed_receipt'}
+            else:
+                receipt = replayed[side]
+                rows = {ref['observation_line']: ref for ref in receipt['observation_references']}
+                locations = {}
+                for label in ('previous', 'current'):
+                    ref = rows[finding[label+'_line']]
+                    source = receipt['snapshots'][ref['snapshot_index']-1]
+                    locations[label] = dict(ref, input_sha256=source['input_sha256'])
+                sides[side] = {'status': 'located', **locations}
+        result['source_lookup'] = dict(event_id=event_id, transition_status=event['status'], **sides)
+    return result
 
 
 def _read(path, limit):
@@ -193,11 +226,16 @@ def main(argv=None):
     parser.add_argument('--output', type=Path)
     parser.add_argument('--verify-report', type=Path)
     parser.add_argument('--expected-report-sha256')
+    parser.add_argument('--locate-event', help='look up one verified transition ID in replayed neighbor receipts')
     args = parser.parse_args(argv)
     try:
         retained = None
         if bool(args.verify_report) != bool(args.expected_report_sha256):
             raise ValueError('verification requires both saved report and independent pin')
+        if args.locate_event is not None:
+            if not args.verify_report:
+                raise ValueError('source lookup requires a retained report and independent pin')
+            _pin(args.locate_event)
         if args.verify_report:
             _pin(args.expected_report_sha256)  # Validate before any source file is opened.
             retained = _read(args.verify_report, MAX_REPORT_BYTES)
@@ -227,7 +265,7 @@ def main(argv=None):
                             neighbor_sources=neighbor_sources)
         if retained is not None:
             result = verify_comparison(*inputs, retained, expected_report_sha256=args.expected_report_sha256,
-                                       **requirements)
+                                       event_id=args.locate_event, **requirements)
         else:
             result = compare_reviews(*inputs, **requirements)
         rendered = _canonical(result)
