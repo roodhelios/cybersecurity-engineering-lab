@@ -145,5 +145,7 @@ This verifies current-implementation consistency against supplied bytes. It does
 authenticate source logs, recipient requirements or the unsigned summary; establish
 telemetry completeness; prove collection scope; or implement historical model replay.
 Retain the original files, review requirements and matching implementation checkout.
-Next work is a portable retention procedure for those dependencies, with explicit
-model/version support rather than guessing how an older case should be interpreted.
+The [private archive workflow](cloudtrail-archive.md) now retains those dependencies
+together and reproduces only against a matching trusted model checkout. Archived
+source remains data, not historical code dispatch. Verified restoration and broader
+model/version support remain unfinished.

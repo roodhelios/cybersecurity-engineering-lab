@@ -196,6 +196,18 @@ account, case, scope, threshold and window requirements. Its unsigned summary om
 raw event/context fields. Matching hashes alone are not enough and the report cannot
 choose the recipient's detection settings.
 
+To retain the case, exact original files and matching model source together:
+
+```bash
+python -S demo_cloudtrail_archive.py
+```
+
+Expect `cloudtrail_archive_exercise_passed`, two inputs, four unique events, one
+duplicate copy and three rejected negative cases after the separate originals are
+removed. The [archive guide](docs/cloudtrail-archive.md) gives private create/verify
+commands, independent pins and matching-checkout requirements. The archive is not
+redacted or encrypted, and archived source is never executed. No AWS calls occur.
+
 ## Teardown procedure
 
 For a complete offline response exercise, follow the

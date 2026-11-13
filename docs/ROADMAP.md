@@ -49,6 +49,11 @@ The backlog is ordered to produce complete, reviewable systems instead of many d
   against original ordered bytes and independently supplied account/context/settings,
   returning a minimized unsigned summary. Historical model replay, source authentication
   and live account collection remain unfinished; no response action is performed.
+  A separate private archive now retains the exact case, ordered originals,
+  recipient settings and an allowlisted source snapshot. Verification reproduces
+  after removing separate originals, under an independent archive pin and matching
+  trusted checkout. Archived source is never executed. Verified restoration,
+  encryption and supported historical model dispatch remain unfinished.
 
 ## Milestone 4: Safe asset intelligence
 

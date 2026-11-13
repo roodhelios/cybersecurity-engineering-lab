@@ -8,6 +8,19 @@ synthetic data and run locally. It does not deploy cloud resources or run malwar
 
 ## Choose a working project
 
+To retain and reproduce an offline cloud-security case using only the standard library:
+
+```bash
+python -S projects/cloud-security/aws-cost-plan/demo_cloudtrail_archive.py
+```
+
+Expect `cloudtrail_archive_exercise_passed`, `originals_removed: true`, four unique
+events and three rejected negative cases. The temporary synthetic exercise keeps
+the exact case, plain/gzip originals and matching model source in one private
+archive, then reproduces after removing the separate originals. See the
+[CloudTrail archive guide](projects/cloud-security/aws-cost-plan/docs/cloudtrail-archive.md).
+It never executes archived code, contacts AWS or claims containment and recovery.
+
 | Project | What you can run | Guide |
 | --- | --- | --- |
 | Detection engineering | Normalize Suricata and Zeek events, correlate connections, attach conservative ATT&CK candidates | [Event normalizer](projects/detection-engineering/event-normalizer/README.md) |
