@@ -177,6 +177,112 @@ class ArchiveTests(unittest.TestCase):
             self.assertEqual(saved.read_bytes(), before)
             self.assertFalse(any((root/name).exists() for name in ('case.json', 'a.bin', 'b.bin')))
 
+    def test_restore_exact_bytes_private_modes_and_independent_replay(self):
+        with tempfile.TemporaryDirectory() as directory:
+            destination = Path(directory)/'restored'
+            before = self.data
+            with patch('socket.socket', side_effect=AssertionError('network forbidden')):
+                result = archive.restore_archive(self.data, destination,
+                    expected_archive_sha256=archive._sha(self.data), **self.settings)
+            self.assertEqual(result['status'], 'cloudtrail_archive_restored')
+            self.assertEqual(result['restored_file_count'], 3)
+            self.assertEqual(result['restored_code_files'], 0)
+            self.assertEqual(destination.stat().st_mode & 0o777, 0o700)
+            expected = {'case.json': self.case, 'source-01.bin': self.inputs[0], 'source-02.bin': self.inputs[1]}
+            self.assertEqual(set(p.name for p in destination.iterdir()), set(expected))
+            for name, data in expected.items():
+                self.assertEqual((destination/name).read_bytes(), data)
+                self.assertEqual((destination/name).stat().st_mode & 0o777, 0o600)
+            reproduced = archive.verify_case((destination/'case.json').read_bytes(),
+                [(destination/f'source-{index:02d}.bin').read_bytes() for index in (1, 2)], **self.settings)
+            self.assertEqual(reproduced['unique_event_count'], 4)
+            self.assertEqual(self.data, before)
+            for value in ('111122223333', 'archive-case', str(destination), 'fixture-analyst', '192.0.2.'):
+                self.assertNotIn(value, json.dumps(result))
+
+    def test_restore_rejects_before_destination_creation(self):
+        with tempfile.TemporaryDirectory() as directory:
+            destination = Path(directory)/'absent'
+            for data, pin, settings in (
+                    (self.data, '0'*64, self.settings),
+                    (self.data, archive._sha(self.data), dict(self.settings, threshold=4)),
+                    (self.rewrite('case.json', b'{}'), None, self.settings),
+                    (self.rewrite('model/model.py', b'raise AssertionError("must not execute")'), None, self.settings)):
+                with self.subTest(pin=pin), self.assertRaises(ValueError):
+                    archive.restore_archive(data, destination, expected_archive_sha256=pin or archive._sha(data),
+                                            **settings)
+                self.assertFalse(destination.exists())
+
+    def test_restore_preserves_every_existing_destination_type(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            existing = root/'existing'; existing.mkdir(); (existing/'keep').write_bytes(b'preserve')
+            file = root/'file'; file.write_bytes(b'preserve')
+            empty = root/'empty'; empty.mkdir()
+            link = root/'link'; link.symlink_to(existing, target_is_directory=True)
+            dangling = root/'dangling'; dangling.symlink_to(root/'missing')
+            for destination in (existing, file, empty, link, dangling):
+                with self.subTest(destination=destination.name), self.assertRaises(FileExistsError):
+                    archive.restore_archive(self.data, destination,
+                        expected_archive_sha256=archive._sha(self.data), **self.settings)
+            self.assertEqual((existing/'keep').read_bytes(), b'preserve')
+            self.assertEqual(file.read_bytes(), b'preserve')
+            self.assertEqual(list(empty.iterdir()), [])
+            self.assertTrue(link.is_symlink())
+            self.assertTrue(dangling.is_symlink())
+
+    def test_restore_requires_private_real_parent(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            public = root/'public'; public.mkdir(mode=0o755); public.chmod(0o755)
+            linked = root/'linked'; linked.symlink_to(root, target_is_directory=True)
+            for parent in (public, linked):
+                with self.subTest(parent=parent.name), self.assertRaises(ValueError):
+                    archive.restore_archive(self.data, parent/'absent',
+                        expected_archive_sha256=archive._sha(self.data), **self.settings)
+                self.assertFalse((parent/'absent').exists())
+
+    def test_restore_cleans_partial_set_after_write_and_readback_failure(self):
+        publish = archive._publish
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            for failure in ('second_write', 'readback'):
+                destination = root/failure
+                def failing(path, data):
+                    publish(path, data)
+                    if failure == 'second_write' and path.name == 'source-01.bin':
+                        raise OSError('private failure after publication')
+                    if failure == 'readback' and path.name == 'source-02.bin':
+                        path.write_bytes(b'changed')
+                with patch.object(archive, '_publish', side_effect=failing):
+                    with self.assertRaises((OSError, ValueError)):
+                        archive.restore_archive(self.data, destination,
+                            expected_archive_sha256=archive._sha(self.data), **self.settings)
+                self.assertFalse(destination.exists())
+            self.assertEqual(list(root.iterdir()), [])
+
+    def test_restore_reads_one_archive_and_cli_errors_are_minimized(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            source, destination = root/'case.zip', root/'restored'
+            source.write_bytes(self.data)
+            args = ['restore', str(source), '--expected-archive-sha256', archive._sha(self.data),
+                    '--output-directory', str(destination), '--account-id', '111122223333',
+                    '--case-id', 'archive-case', '--scope-note', 'synthetic', '--threshold', '3',
+                    '--window-seconds', '300']
+            reader = archive._read_archive
+            output = io.StringIO()
+            with patch.object(archive, '_read_archive', wraps=reader) as captured, redirect_stdout(output):
+                self.assertEqual(archive.main(args), 0)
+                captured.assert_called_once_with(source)
+            self.assertEqual(json.loads(output.getvalue())['restored_file_count'], 3)
+            out, err = io.StringIO(), io.StringIO()
+            with redirect_stdout(out), redirect_stderr(err):
+                self.assertEqual(archive.main(args), 2)
+            self.assertEqual(out.getvalue(), '')
+            self.assertNotIn(str(root), err.getvalue())
+            self.assertEqual(source.read_bytes(), self.data)
+
     def test_failures_leave_no_output_and_fixed_diagnostic(self):
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory)

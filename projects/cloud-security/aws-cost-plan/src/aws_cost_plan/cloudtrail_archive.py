@@ -122,7 +122,7 @@ def _members(data):
         return members
 
 
-def verify_archive(data, *, expected_archive_sha256, **requirements):
+def _inspect_archive(data, *, expected_archive_sha256, **requirements):
     """Reproduce under independent settings and the current trusted checkout only."""
     _pin(expected_archive_sha256)
     if type(data) is not bytes or len(data) > MAX_ARCHIVE_BYTES or _sha(data) != expected_archive_sha256:
@@ -152,8 +152,53 @@ def verify_archive(data, *, expected_archive_sha256, **requirements):
         raise ValueError('archive requires a different trusted model checkout')
     originals = _inputs(members[name] for name in names)
     result = verify_case(members['case.json'], originals, **requirements)
-    return dict(result, status='cloudtrail_archive_reproduced', archive_sha256=expected_archive_sha256,
-                model_source_matched=True, archived_code_executed=False)
+    return (dict(result, status='cloudtrail_archive_reproduced', archive_sha256=expected_archive_sha256,
+                 model_source_matched=True, archived_code_executed=False), members)
+
+
+def verify_archive(data, *, expected_archive_sha256, **requirements):
+    """Reproduce without restoring files or executing archived code."""
+    result, _ = _inspect_archive(data, expected_archive_sha256=expected_archive_sha256, **requirements)
+    return result
+
+
+def restore_archive(data, destination, *, expected_archive_sha256, **requirements):
+    """Reproduce before creating an exclusive private directory of exact evidence bytes.
+
+    Requires a cooperative caller and trusted private parent/ancestors. The file set
+    is not atomically published; only a successful return declares it complete.
+    """
+    if os.name != 'posix':
+        raise ValueError('private restore requires POSIX')
+    result, members = _inspect_archive(data, expected_archive_sha256=expected_archive_sha256, **requirements)
+    destination = Path(destination)
+    parent = destination.parent.lstat()
+    if (not stat.S_ISDIR(parent.st_mode) or parent.st_uid != os.geteuid() or
+            stat.S_IMODE(parent.st_mode) & 0o077):
+        raise ValueError('restore parent must be an owned private real directory')
+    # Fixed flat output names, never ZIP paths. Archived source stays in the archive.
+    outputs = {'case.json': members['case.json']}
+    outputs.update({f'source-{index:02d}.bin': members[f'inputs/{index:02d}.bin']
+                    for index in range(1, result['input_count'] + 1)})
+    destination.mkdir(mode=0o700)
+    attempted = []
+    try:
+        for name, content in outputs.items():
+            path = destination/name
+            attempted.append(path)
+            _publish(path, content)
+        # Check the actual written bytes before declaring the set complete.
+        if any(path.read_bytes() != outputs[path.name] for path in attempted):
+            raise ValueError('restored file differs from verified bytes')
+    except BaseException:
+        # Only remove this invocation's fresh names under the cooperative-parent contract.
+        # Process kill or power loss cannot run cleanup; never reuse a partial target.
+        for path in attempted:
+            path.unlink(missing_ok=True)
+        destination.rmdir()
+        raise
+    return dict(result, status='cloudtrail_archive_restored', restored_file_count=len(outputs),
+                exact_bytes_restored=True, restored_code_files=0)
 
 
 def _read_archive(path):
@@ -193,7 +238,11 @@ def main(argv=None):
     verify = commands.add_parser('verify')
     verify.add_argument('archive', type=Path)
     verify.add_argument('--expected-archive-sha256', required=True)
-    for command in (create, verify):
+    restore = commands.add_parser('restore')
+    restore.add_argument('archive', type=Path)
+    restore.add_argument('--expected-archive-sha256', required=True)
+    restore.add_argument('--output-directory', type=Path, required=True)
+    for command in (create, verify, restore):
         command.add_argument('--account-id', required=True)
         command.add_argument('--case-id', required=True)
         command.add_argument('--scope-note', required=True)
@@ -211,9 +260,12 @@ def main(argv=None):
             result = verify_archive(data, expected_archive_sha256=_sha(data), **requirements)
             _publish(args.output, data)
             result['status'] = 'cloudtrail_archive_created'
-        else:
+        elif args.command == 'verify':
             result = verify_archive(_read_archive(args.archive),
                                     expected_archive_sha256=args.expected_archive_sha256, **requirements)
+        else:
+            result = restore_archive(_read_archive(args.archive), args.output_directory,
+                                     expected_archive_sha256=args.expected_archive_sha256, **requirements)
     except (OSError, ValueError, TypeError, KeyError, UnicodeError, EOFError, zlib.error,
             RecursionError, OverflowError, zipfile.BadZipFile, zipfile.LargeZipFile):
         print('error: CloudTrail archive failed; check private originals, pins, recipient settings and matching checkout',
