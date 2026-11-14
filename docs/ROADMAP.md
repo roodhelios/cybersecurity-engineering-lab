@@ -52,7 +52,9 @@ The backlog is ordered to produce complete, reviewable systems instead of many d
   A separate private archive now retains the exact case, ordered originals,
   recipient settings and an allowlisted source snapshot. Verification reproduces
   after removing separate originals, under an independent archive pin and matching
-  trusted checkout. Archived source is never executed. Verified restoration,
+  trusted checkout. Verified restoration now writes the exact case and ordered
+  source bytes to a new private directory, then checks the written bytes. Archived
+  source is never restored as code or executed. Directory publication is not atomic;
   encryption and supported historical model dispatch remain unfinished.
 
 ## Milestone 4: Safe asset intelligence

@@ -204,7 +204,9 @@ python -S demo_cloudtrail_archive.py
 
 Expect `cloudtrail_archive_exercise_passed`, two inputs, four unique events, one
 duplicate copy and three rejected negative cases after the separate originals are
-removed. The [archive guide](docs/cloudtrail-archive.md) gives private create/verify
+removed. It then restores three exact evidence files into a new private directory
+and independently reproduces the restored case. Expect `exact_bytes_restored: true`
+and `restored_code_files: 0`. The [archive guide](docs/cloudtrail-archive.md) gives private create/verify/restore
 commands, independent pins and matching-checkout requirements. The archive is not
 redacted or encrypted, and archived source is never executed. No AWS calls occur.
 

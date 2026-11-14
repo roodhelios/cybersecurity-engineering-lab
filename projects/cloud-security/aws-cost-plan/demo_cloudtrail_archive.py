@@ -10,8 +10,9 @@ from unittest.mock import patch
 ROOT = Path(__file__).resolve().parent
 sys.path.insert(0, str(ROOT/'src'))
 
-from aws_cost_plan.cloudtrail_archive import _publish, _sha, build_archive, verify_archive
+from aws_cost_plan.cloudtrail_archive import _publish, _sha, build_archive, verify_archive, restore_archive
 from aws_cost_plan.cloudtrail_case import build_case
+from aws_cost_plan.cloudtrail_case_verify import verify_case
 
 
 def exercise():
@@ -32,6 +33,14 @@ def exercise():
             pin = _sha(payload)
             for path in paths: path.unlink()
             checked = verify_archive(archive.read_bytes(), expected_archive_sha256=pin, **settings)
+            restored = work/'restored'
+            restoration = restore_archive(archive.read_bytes(), restored, expected_archive_sha256=pin, **settings)
+            restored_originals = [(restored/f'source-{index:02d}.bin').read_bytes() for index in (1, 2)]
+            if (restored/'case.json').read_bytes() != case_data or restored_originals != originals:
+                raise ValueError('restoration changed original bytes')
+            replayed = verify_case((restored/'case.json').read_bytes(), restored_originals, **settings)
+            if replayed['case_sha256'] != checked['case_sha256']:
+                raise ValueError('restored case failed independent reproduction')
             rejected = 0
             for candidate, expected_pin, requirements in (
                     (payload, '0'*64, settings),
@@ -45,7 +54,9 @@ def exercise():
     return dict(status='cloudtrail_archive_exercise_passed', originals_removed=True,
         input_count=checked['input_count'], unique_event_count=checked['unique_event_count'],
         duplicate_copy_count=checked['duplicate_copy_count'], negative_cases_rejected=rejected,
-        archive_unchanged=True, archived_code_executed=False, containment='not_performed', recovery='not_verified')
+        archive_unchanged=True, archived_code_executed=False, containment='not_performed', recovery='not_verified',
+        exact_bytes_restored=restoration['exact_bytes_restored'], restored_file_count=restoration['restored_file_count'],
+        restored_code_files=restoration['restored_code_files'], restored_case_reproduced=True)
 
 
 def main():

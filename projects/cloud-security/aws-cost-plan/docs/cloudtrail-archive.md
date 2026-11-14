@@ -17,7 +17,10 @@ python -S projects/cloud-security/aws-cost-plan/demo_cloudtrail_archive.py
 Expect `cloudtrail_archive_exercise_passed`, `originals_removed: true`, two inputs,
 four unique events, one duplicate copy and three rejected negative cases. The exercise
 uses original synthetic fixtures and temporary plain/gzip files, removes the case
-and both originals, then reproduces from the archive. Wrong pins, changed archive
+and both originals, then reproduces from the archive, restores three exact evidence
+files and independently reproduces the restored case. Expect `exact_bytes_restored: true`,
+`restored_file_count: 3`, `restored_code_files: 0` and `restored_case_reproduced: true`.
+Wrong pins, changed archive
 bytes and a different recipient threshold reject. All temporary files are discarded.
 Network socket creation is blocked. No AWS account, credentials or service is needed.
 
@@ -63,6 +66,58 @@ select your recipient threshold or account. Normal output omits paths, account a
 case labels, principals, addresses and raw events. Failure exits 2 with fixed text
 and no success JSON. Verification does not write or restore any files.
 
+## Restore evidence for further review
+
+Use the same independently retained archive pin and separately chosen recipient
+settings. Create an owned private parent directory outside Git first. From the project
+directory, choose a destination that does not exist:
+
+```bash
+PYTHONPATH=src python -S -m aws_cost_plan.cloudtrail_archive restore /private/new-case.zip \
+  --expected-archive-sha256 ARCHIVE_PIN \
+  --account-id 111122223333 --case-id synthetic-collection --scope-note synthetic \
+  --threshold 3 --window-seconds 300 --output-directory /private/restored-case
+```
+
+Restore reads the bounded archive once and applies the same complete verification
+before creating the destination. It requires an owned real parent directory with
+no group/other permission bits. The new directory is mode 0700, and each evidence
+file is mode 0600. It never overwrites an existing file, directory or symlink.
+Only fixed flat filenames are written. ZIP entry paths are never extracted:
+
+| Restored filename | Contents |
+| --- | --- |
+| `case.json` | Exact retained case bytes |
+| `source-01.bin` through `source-32.bin` | Exact original input bytes in their retained order, including original gzip compression |
+
+Only the supplied input count is written. The two-input example produces three files.
+Archived Python and the archive manifest are not restored. Source files use `.bin`
+because their format is detected from bytes, not their restored filename. To use the
+restored evidence with the existing case verifier:
+
+```bash
+PYTHONPATH=src python -S -m aws_cost_plan.cloudtrail_case_verify \
+  /private/restored-case/case.json \
+  /private/restored-case/source-01.bin /private/restored-case/source-02.bin \
+  --account-id 111122223333 --case-id synthetic-collection --scope-note synthetic \
+  --threshold 3 --window-seconds 300
+```
+
+Expect `cloudtrail_archive_restored`, `exact_bytes_restored: true` and minimized counts
+from restore, then `case_reproduced` from the independent verifier. Restore checks the
+written bytes before returning success and does not change the archive. It reports
+no paths or raw events. Account recovery remains `not_verified`: restoring evidence
+does not restore an AWS account or establish a containment outcome.
+
+The directory's complete file set is not published atomically. Use cooperative
+writers and trusted parent/ancestor paths; do not consume the destination before
+successful completion. A handled write/readback failure removes this invocation's
+new files and directory. Process termination, power loss or a cleanup failure can
+leave private partial files. Inspect such a destination privately, keep it out of
+subsequent review, and choose a new path for a retry. Existing destinations are
+preserved. File fsync does not establish parent-directory crash durability, storage
+encryption or protection from another process running as the same user.
+
 ## Format and bounds
 
 Version 1 uses a stored ZIP container with fixed member names and deterministic
@@ -99,5 +154,5 @@ the implementation for review, but do not provide a trusted executable environme
 or historical model dispatch. No source/collector authenticity, pin freshness,
 telemetry completeness, account state, containment or recovery is established.
 
-Next: define a verified restore procedure and supported historical model policy
-before adding automatic environment selection or replay.
+Next: define a supported historical model policy before adding automatic environment
+selection or replay. Restoring bytes does not make archived code trusted to execute.
