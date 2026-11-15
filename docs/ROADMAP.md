@@ -13,6 +13,10 @@ The backlog is ordered to produce complete, reviewable systems instead of many d
 - [x] Map selected events to MITRE ATT&CK techniques without overstating confidence.
 - [x] Add correlation for repeated connection attempts in a bounded time window.
 - [x] Measure throughput and document the test environment.
+- [x] Retain and reproduce a complete review from one saved plain/gzip Zeek text
+  connection log. The original byte digest and decompressed text-line references
+  remain linked to unchanged normalization/correlation rules. This is a bounded
+  offline handoff, not a Zeek deployment, source authentication or detection-accuracy result.
 
 ## Milestone 2: Aegis authorization core
 
