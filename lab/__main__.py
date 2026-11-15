@@ -19,6 +19,8 @@ EXERCISES = (
     ('malware-notes', ('-m', 'projects.malware_analysis.report_summary',
                        'projects/malware_analysis/examples/synthetic-behavior-report-v2.json'),
      'standard-library', 'Summarize inert analysis notes without opening a sample'),
+    ('zeek-review', ('projects/detection-engineering/event-normalizer/demo_zeek_review.py',),
+     'standard-library', 'Reproduce original gzip Zeek text findings and source-line references'),
     ('dns-recipient', (DNS+'demo_authorized_handoff.py',), AUTH,
      'Check recipient-signed requirements using temporary keys'),
     ('dns-reviewers', (DNS+'demo_reviewer_handoff.py',), AUTH,

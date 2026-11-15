@@ -11,6 +11,10 @@ The parser intentionally rejects unknown shapes instead of silently guessing. Or
 
 ## Import a Zeek text connection log
 
+For a complete private review from the original plain/gzip file, start with
+[the one-workflow command](#review-an-original-text-log-in-one-workflow). The
+two-step importer below remains available for callers that need converted JSONL.
+
 Zeek commonly writes tab-separated logs with `#separator`, `#fields`, and `#types`
 headers. A text `conn.log` cannot be passed directly to the JSON parser. From this
 project directory, convert the included synthetic log first:
@@ -186,6 +190,14 @@ fields, malformed input, and reports exceeding 16 MiB fail with exit 2 and no su
 document. Existing correlation batch limits still apply. Empty batches can reproduce
 with zero findings. Reproduction establishes consistency with this implementation,
 not independent detection accuracy, authentic source data, or proof of compromise.
+
+## Review an original text log in one workflow
+
+Use the [original-log review guide](docs/ORIGINAL_ZEEK_REVIEW.md) to create and
+reproduce a private correlation report directly from one plain/gzip text log.
+It binds the original bytes and original text-line references without retaining
+an intermediate JSONL file. For the temporary synthetic example from the repository
+root, run `python -m lab run zeek-review`.
 
 ## Limitations
 

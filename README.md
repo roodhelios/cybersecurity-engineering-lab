@@ -58,13 +58,20 @@ its input contract, tests and limits. Existing script/module commands still work
 python -m lab list --format json
 python -m lab run arp-compare
 python -m lab run malware-notes
+python -m lab run zeek-review
 ```
 
-The catalog contains 11 fixed exercises. The first three use only the standard
+The catalog contains 12 fixed exercises. The first four use only the standard
 library. `arp-compare` returns `arp_comparison_exercise_passed` and reproduces both
 saved synthetic input sets. `malware-notes` returns `report_type: behavior-note-coverage`
 with two claimed observations and one unlinked observation. It opens no sample.
 Neither result establishes malicious activity.
+
+`zeek-review` reports four imported events, one correlation candidate and original
+text lines 8 to 11 from a synthetic gzip connection log. It reproduces the complete
+review against the exact original bytes without retaining an intermediate JSONL
+file. See the [original-log review guide](projects/detection-engineering/event-normalizer/README.md#review-an-original-text-log-in-one-workflow)
+for private retained commands and evidence limits.
 
 The eight DNS signature exercises require the listed optional PyNaCl dependency:
 
