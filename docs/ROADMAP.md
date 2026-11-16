@@ -74,6 +74,10 @@ The backlog is ordered to produce complete, reviewable systems instead of many d
   set, preserving conflicting sets, missing inputs and source-row references.
   Byte-identical snapshots are flagged; byte difference is not source independence.
   This does not select ground truth or implement general asset identity.
+  A recipient can reproduce the complete multi-input review under independent
+  report, ordered-original and scope byte pins. Input order, source-row references,
+  coverage and every report field must match the current implementation. Pins need
+  a separate trusted channel; source authenticity/freshness remain external.
   A single saved-log workflow now
   retains both imports and the policy review before private publication. General cross-source asset
   identity and deduplication remain unfinished.

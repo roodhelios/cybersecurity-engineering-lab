@@ -13,7 +13,9 @@ python -m lab run dns-sources
 ```
 
 Expect `dns_source_review_exercise_passed` with three supplied inputs, two distinct
-input byte digests, and `identical_input_groups: [[1, 3]]`. The synthetic exercise
+input byte digests, and `identical_input_groups: [[1, 3]]`. It also reports
+`recipient_status: dns_source_review_reproduced` and `changed_original: rejected`.
+The synthetic exercise
 reports one hostname in each status: `agreement`, `disagreement`,
 `single_observation` and `not_observed`. It creates no files or network connections.
 The third input is deliberately a copy, not independent corroboration.
@@ -55,6 +57,52 @@ and normalized observation time are also retained. `identical_input_groups` flag
 repeated byte digests. This cannot establish that different bytes came from
 different collectors. Reformatting a copy makes its byte digest different while
 leaving the same claims. Neither form establishes independent corroboration.
+
+## Reproduce a received review
+
+The recipient supplies the exact ordered originals and scope, plus independently
+retained SHA-256 pins for the report, every original and the scope. The verifier
+checks pins before parsing, regenerates the complete report with the current
+implementation and compares every field. It does not trust pins inside the report.
+Changed counts, source-row references, types, unknown fields and input order fail.
+JSON whitespace/key ordering can differ if the independent report pin names those
+exact received bytes; array and input order remain significant.
+
+For the locally generated fixture report above, record pins from your own trusted
+creation context and run:
+
+```bash
+sha256_file() {
+  python -c 'import hashlib, pathlib, sys; print(hashlib.sha256(pathlib.Path(sys.argv[1]).read_bytes()).hexdigest())' "$1"
+}
+report_pin=$(sha256_file "$review_dir/review.json")
+scope_pin=$(sha256_file projects/asset-intelligence/dns-review/examples/scope.json)
+first_pin=$(sha256_file projects/asset-intelligence/dns-review/examples/after.json)
+second_pin=$(sha256_file projects/asset-intelligence/dns-review/examples/alternate-view.json)
+python projects/asset-intelligence/dns-review/dns_sources_verify.py \
+  "$review_dir/review.json" \
+  projects/asset-intelligence/dns-review/examples/after.json \
+  projects/asset-intelligence/dns-review/examples/alternate-view.json \
+  --scope projects/asset-intelligence/dns-review/examples/scope.json \
+  --expected-report-sha256 "$report_pin" --expected-scope-sha256 "$scope_pin" \
+  --expected-input-sha256 "$first_pin" --expected-input-sha256 "$second_pin"
+```
+
+Expect `dns_source_review_reproduced`, two supplied inputs, two distinct input byte
+digests and one hostname per status. The verifier reads bounded regular files,
+writes nothing and emits counts/pin only, without hostname/address/path details.
+A wrong report pin stops before original files are opened. Other failures return
+exit 2 with a fixed diagnostic and no success JSON. Reports are limited to 32 MiB;
+the existing 1 MiB snapshot/scope limits and two-to-eight input count still apply.
+Leaf symlinks, directories and FIFOs are rejected; parent directories must be trusted.
+
+For a real handoff, retain and distribute all pins separately through an independently
+trusted channel. Computing fresh pins from untrusted received files authenticates
+nothing. This example computes pins only for locally generated synthetic evidence.
+Reproduction is against the current checkout, with no historical model dispatch,
+source signature, time freshness, trusted latest-state service or independent
+collector evidence. Review whether the pinned views/address families and context
+were comparable before interpreting results. No key, service or network is used.
 
 ## Bounds and interpretation
 

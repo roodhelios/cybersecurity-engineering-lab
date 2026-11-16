@@ -76,7 +76,9 @@ for private retained commands and evidence limits.
 
 `dns-sources` groups aligned saved DNS address claims, preserves conflicting sets
 and missing observations, and flags byte-identical inputs. It does not count copies
-as independent corroboration. See the [source-review guide](projects/asset-intelligence/dns-review/SOURCE_REVIEW.md).
+as independent corroboration. It also reproduces the complete report under separate
+original-byte pins and rejects a changed original. See the
+[source-review and recipient guide](projects/asset-intelligence/dns-review/SOURCE_REVIEW.md).
 
 The eight DNS signature exercises require the listed optional PyNaCl dependency:
 
