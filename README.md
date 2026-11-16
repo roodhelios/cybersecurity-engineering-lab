@@ -59,9 +59,10 @@ python -m lab list --format json
 python -m lab run arp-compare
 python -m lab run malware-notes
 python -m lab run zeek-review
+python -m lab run dns-sources
 ```
 
-The catalog contains 12 fixed exercises. The first four use only the standard
+The catalog contains 13 fixed exercises. The first five use only the standard
 library. `arp-compare` returns `arp_comparison_exercise_passed` and reproduces both
 saved synthetic input sets. `malware-notes` returns `report_type: behavior-note-coverage`
 with two claimed observations and one unlinked observation. It opens no sample.
@@ -72,6 +73,10 @@ text lines 8 to 11 from a synthetic gzip connection log. It reproduces the compl
 review against the exact original bytes without retaining an intermediate JSONL
 file. See the [original-log review guide](projects/detection-engineering/event-normalizer/README.md#review-an-original-text-log-in-one-workflow)
 for private retained commands and evidence limits.
+
+`dns-sources` groups aligned saved DNS address claims, preserves conflicting sets
+and missing observations, and flags byte-identical inputs. It does not count copies
+as independent corroboration. See the [source-review guide](projects/asset-intelligence/dns-review/SOURCE_REVIEW.md).
 
 The eight DNS signature exercises require the listed optional PyNaCl dependency:
 

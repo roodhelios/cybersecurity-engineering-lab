@@ -5,6 +5,11 @@ starts the lab's asset-intelligence milestone with explicit scope, normalized ho
 records, provenance references, and an address-change review. Reviewed address rules and team routing are available below. Explicit risk triage for reviewed mismatches is available below. Accepted
 ownership, remediation, collection and broader asset correlation remain unimplemented here.
 
+To review agreement and disagreement across two to eight saved snapshots at one
+claimed instant, use [aligned source review](SOURCE_REVIEW.md), or run
+`python -m lab run dns-sources` from the repository root. Each normalized hostname
+keeps its own identity even when several names share an address. No query is sent.
+
 Explicit enrolled-key acceptance of responsibility for one reproduced review task is
 now available separately. Run `demo_responsibility.py` after the optional PyNaCl
 install below, or follow the [retained receipt guide](RESPONSIBILITY.md). This does
