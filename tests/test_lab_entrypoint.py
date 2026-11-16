@@ -20,9 +20,9 @@ class LabEntryPointTests(unittest.TestCase):
             with redirect_stdout(StringIO()) as output:
                 self.assertEqual(main(['list', '--format', 'json']), 0)
             rows = json.loads(output.getvalue())['exercises']
-            self.assertEqual(len(rows), 12)
-            self.assertEqual(len({row['name'] for row in rows}), 12)
-            self.assertEqual(sum(row['dependencies'] == 'standard-library' for row in rows), 4)
+            self.assertEqual(len(rows), 13)
+            self.assertEqual(len({row['name'] for row in rows}), 13)
+            self.assertEqual(sum(row['dependencies'] == 'standard-library' for row in rows), 5)
             with redirect_stdout(StringIO()) as output:
                 self.assertEqual(main(['list']), 0)
             self.assertIn('requirements-auth.txt', output.getvalue())
@@ -48,7 +48,8 @@ class LabEntryPointTests(unittest.TestCase):
     def test_actual_standard_library_commands_run_from_another_working_directory(self):
         expected = {'cloudtrail-archive': 'cloudtrail_archive_exercise_passed',
                     'arp-compare': 'arp_comparison_exercise_passed', 'malware-notes': None,
-                    'zeek-review': 'zeek_review_exercise_passed'}
+                    'zeek-review': 'zeek_review_exercise_passed',
+                    'dns-sources': 'dns_source_review_exercise_passed'}
         with tempfile.TemporaryDirectory() as directory:
             for name, status in expected.items():
                 with self.subTest(name=name):
