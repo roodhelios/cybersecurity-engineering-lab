@@ -66,6 +66,9 @@ The backlog is ordered to produce complete, reviewable systems instead of many d
 - [ ] Define fixture-based asset and finding schemas. The first bounded DNS observation
   contract and exact hostname-scope policy now work with synthetic fixtures. The first reviewed address-mismatch finding and review-team contract now work.
   Broader finding and accepted-ownership contracts remain unfinished.
+  A separate mock host-observation schema now supports explicit namespace/scope,
+  strong identifier claims, source references and identity-conflict findings. It is
+  not a general finding taxonomy, authenticated inventory or accepted ownership.
 - [ ] Normalize and deduplicate discoveries from multiple mock sources. Saved DNS
   snapshots now normalize hostnames and IP addresses, reject ambiguous duplicate rows,
   and compare address sets with source row references. Saved Zeek DNS JSON can supply snapshots for one explicit address family, with
@@ -74,7 +77,12 @@ The backlog is ordered to produce complete, reviewable systems instead of many d
   set, preserving conflicting sets, missing inputs and source-row references.
   Byte-identical snapshots are flagged; byte difference is not source independence.
   This does not select ground truth or implement general asset identity.
-  A recipient can reproduce the complete multi-input review under independent
+  A separate two-to-eight-source mock host review now groups equal EC2 ARN/hardware
+  claims only when the entire connected candidate component has no contradictory
+  identifier kind. Transitive conflicts retain individual observations and a linked
+  finding. IP/hostname alone never merge records. General temporal entity resolution,
+  independently enrolled source authority and native collectors remain unfinished.
+  For the existing DNS workflow, a recipient can reproduce the complete multi-input review under independent
   report, ordered-original and scope byte pins. Input order, source-row references,
   coverage and every report field must match the current implementation. Pins need
   a separate trusted channel; source authenticity/freshness remain external.
