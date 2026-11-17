@@ -44,6 +44,7 @@ shows retained-file commands, publication bounds and trust requirements.
 | Zero Trust | Verify signed requests and replay bounds, evaluate OPA policy fixtures and audit integrity | [Aegis authorization core](projects/zero-trust/aegis-threat-model/README.md) |
 | Cloud security | Review supplied IAM/CloudFormation/Terraform plans and reproduce saved CloudTrail cases | [AWS security tools](projects/cloud-security/aws-cost-plan/README.md) |
 | Asset intelligence | Compare scoped saved DNS observations, review mismatches and verify enrolled-key task claims | [DNS workflow](projects/asset-intelligence/dns-review/README.md) |
+| Mock asset identity | Group explicit host identifier claims and retain unresolved conflicts without merging on IP/hostname | [Identity review](projects/asset-intelligence/asset-identity-review/README.md) |
 | Network defense | Reconcile saved ARP changes and Linux neighbor snapshots with supporting evidence | [ARP consistency](projects/network-defense/arp-consistency/README.md) |
 | TCP reset triage | Group saved Zeek reset-state claims with original-line references | [TCP reset review](projects/network-defense/tcp-reset-review/README.md) |
 | Safe malware analysis | Validate and compare inert behavior notes; optionally run a YARA text-fixture exercise | [Analysis exercises](projects/malware_analysis/README.md) |
@@ -60,13 +61,19 @@ python -m lab run arp-compare
 python -m lab run malware-notes
 python -m lab run zeek-review
 python -m lab run dns-sources
+python -m lab run asset-identity
 ```
 
-The catalog contains 13 fixed exercises. The first five use only the standard
+The catalog contains 14 fixed exercises. The first six use only the standard
 library. `arp-compare` returns `arp_comparison_exercise_passed` and reproduces both
 saved synthetic input sets. `malware-notes` returns `report_type: behavior-note-coverage`
 with two claimed observations and one unlinked observation. It opens no sample.
 Neither result establishes malicious activity.
+
+`asset-identity` reviews two mock sources: seven supplied host records become six
+review groups, with one matching group and one unresolved identifier component.
+The [identity review guide](projects/asset-intelligence/asset-identity-review/README.md)
+includes complete private-output commands, exact scope/schema and source-trust limits.
 
 `zeek-review` reports four imported events, one correlation candidate and original
 text lines 8 to 11 from a synthetic gzip connection log. It reproduces the complete

@@ -1,0 +1,41 @@
+{
+  "schema_version": 1,
+  "scope": "synthetic",
+  "namespace": "synthetic-assets",
+  "source_id": "mock-cloud",
+  "captured_at": "2026-11-17T00:00:00Z",
+  "assets": [
+    {
+      "source_record_id": "web-cloud",
+      "kind": "host",
+      "identifiers": {
+        "cloud_resource_id": "arn:aws:ec2:us-east-1:111122223333:instance/i-0123456789abcdef0"
+      },
+      "hostname": "Web.Example.Test.",
+      "ip_addresses": [
+        "192.0.2.10"
+      ]
+    },
+    {
+      "source_record_id": "shared-ip-only",
+      "kind": "host",
+      "identifiers": {},
+      "hostname": "shared.example.test",
+      "ip_addresses": [
+        "192.0.2.20"
+      ]
+    },
+    {
+      "source_record_id": "conflict-cloud",
+      "kind": "host",
+      "identifiers": {
+        "cloud_resource_id": "arn:aws:ec2:us-east-1:111122223333:instance/i-0123456789abcdef1",
+        "hardware_id": "synthetic-hardware-a"
+      },
+      "hostname": "worker.example.test",
+      "ip_addresses": [
+        "192.0.2.30"
+      ]
+    }
+  ]
+}
