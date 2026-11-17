@@ -20,9 +20,9 @@ class LabEntryPointTests(unittest.TestCase):
             with redirect_stdout(StringIO()) as output:
                 self.assertEqual(main(['list', '--format', 'json']), 0)
             rows = json.loads(output.getvalue())['exercises']
-            self.assertEqual(len(rows), 14)
-            self.assertEqual(len({row['name'] for row in rows}), 14)
-            self.assertEqual(sum(row['dependencies'] == 'standard-library' for row in rows), 6)
+            self.assertEqual(len(rows), 15)
+            self.assertEqual(len({row['name'] for row in rows}), 15)
+            self.assertEqual(sum(row['dependencies'] == 'standard-library' for row in rows), 7)
             with redirect_stdout(StringIO()) as output:
                 self.assertEqual(main(['list']), 0)
             self.assertIn('requirements-auth.txt', output.getvalue())
@@ -50,7 +50,8 @@ class LabEntryPointTests(unittest.TestCase):
                     'arp-compare': 'arp_comparison_exercise_passed', 'malware-notes': None,
                     'zeek-review': 'zeek_review_exercise_passed',
                     'dns-sources': 'dns_source_review_exercise_passed',
-                    'asset-identity': 'mock_asset_identity_exercise_passed'}
+                    'asset-identity': 'mock_asset_identity_exercise_passed',
+                    'osquery-hosts': 'osquery_host_review_exercise_passed'}
         with tempfile.TemporaryDirectory() as directory:
             for name, status in expected.items():
                 with self.subTest(name=name):

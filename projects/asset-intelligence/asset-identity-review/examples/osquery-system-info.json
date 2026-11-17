@@ -1,0 +1,13 @@
+[
+  {
+    "uuid": "12345678-1234-4234-8234-1234567890ab",
+    "hostname": "Web.Example.Test.",
+    "hardware_serial": "omitted-fixture-serial",
+    "cpu_logical_cores": 4
+  },
+  {
+    "uuid": "22345678-1234-4234-8234-1234567890ab",
+    "hostname": "shared.example.test",
+    "hardware_serial": "omitted-other-serial"
+  }
+]

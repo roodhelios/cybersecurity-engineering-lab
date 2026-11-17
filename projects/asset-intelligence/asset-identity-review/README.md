@@ -5,6 +5,11 @@ It compares explicitly supplied mock sources, groups equal strong identifiers an
 keeps contradictory components unresolved. It never discovers or contacts assets.
 Existing DNS formats and workflows are unchanged. Prepared with assistant support.
 
+The separate [saved osquery review](OSQUERY_REVIEW.md) accepts a native-format
+`system_info` JSON array under an independently pinned collection-context file.
+Run `python -m lab run osquery-hosts` for the complete synthetic exercise. This is
+a saved-file adapter, not a collector or authenticated source enrollment.
+
 From the repository root, use Python 3.11 or newer on POSIX with no dependencies:
 
 ```bash
