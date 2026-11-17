@@ -82,6 +82,11 @@ The backlog is ordered to produce complete, reviewable systems instead of many d
   identifier kind. Transitive conflicts retain individual observations and a linked
   finding. IP/hostname alone never merge records. General temporal entity resolution,
   independently enrolled source authority and native collectors remain unfinished.
+  A separate saved osquery `system_info` adapter now checks a separately pinned
+  collection-context file and original export digest before projecting UUID/hostname
+  claims into this review. It preserves raw/derived digest and row lineage, rejects
+  ambiguous UUID rows and keeps unselected columns out of output. This is not a
+  live collector, source enrollment, authenticated capture time or coverage proof.
   For the existing DNS workflow, a recipient can reproduce the complete multi-input review under independent
   report, ordered-original and scope byte pins. Input order, source-row references,
   coverage and every report field must match the current implementation. Pins need

@@ -1,0 +1,9 @@
+{
+  "schema_version": 1,
+  "export_kind": "osquery-system-info",
+  "namespace": "synthetic-assets",
+  "scope": "synthetic",
+  "source_id": "saved-osquery",
+  "captured_at": "2026-11-17T12:00:00Z",
+  "expected_export_sha256": "043eed22ca395ae22e2e156800504bde5846ee32e2cf6ba6d8c9d571d1eb5629"
+}

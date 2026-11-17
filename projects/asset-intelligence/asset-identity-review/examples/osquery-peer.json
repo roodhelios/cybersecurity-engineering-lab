@@ -1,0 +1,32 @@
+{
+  "schema_version": 1,
+  "namespace": "synthetic-assets",
+  "scope": "synthetic",
+  "source_id": "reviewed-cloud-fixture",
+  "captured_at": "2026-11-17T12:00:00Z",
+  "assets": [
+    {
+      "source_record_id": "matching-cloud",
+      "kind": "host",
+      "identifiers": {
+        "hardware_id": "12345678-1234-4234-8234-1234567890ab",
+        "cloud_resource_id": "arn:aws:ec2:us-east-1:111122223333:instance/i-0123456789abcdef0"
+      },
+      "hostname": "web.example.test",
+      "ip_addresses": [
+        "192.0.2.10"
+      ]
+    },
+    {
+      "source_record_id": "same-hostname-only",
+      "kind": "host",
+      "identifiers": {
+        "hardware_id": "32345678-1234-4234-8234-1234567890ab"
+      },
+      "hostname": "shared.example.test",
+      "ip_addresses": [
+        "192.0.2.20"
+      ]
+    }
+  ]
+}
