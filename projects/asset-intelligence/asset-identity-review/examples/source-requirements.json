@@ -1,0 +1,26 @@
+{
+  "schema_version": 1,
+  "scope": "synthetic",
+  "namespace": "synthetic-assets",
+  "observed_not_before": "2026-11-16T23:55:00Z",
+  "observed_not_after": "2026-11-17T00:05:00Z",
+  "max_capture_skew_seconds": 0,
+  "sources": [
+    {
+      "source_id": "mock-cloud",
+      "expected_original_sha256": "92bb4daf569acffc9d53be28b4c8b674c692385dca4e51f983af764495f7101e",
+      "allowed_identifier_kinds": [
+        "cloud_resource_id",
+        "hardware_id"
+      ]
+    },
+    {
+      "source_id": "mock-endpoint",
+      "expected_original_sha256": "398a6a6285c61e6ea8784229b99795a516dca3baaf73571f09690b627585454e",
+      "allowed_identifier_kinds": [
+        "cloud_resource_id",
+        "hardware_id"
+      ]
+    }
+  ]
+}

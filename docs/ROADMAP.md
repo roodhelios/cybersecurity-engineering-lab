@@ -90,6 +90,10 @@ The backlog is ordered to produce complete, reviewable systems instead of many d
   claims into this review. It preserves raw/derived digest and row lineage, rejects
   ambiguous UUID rows and keeps unselected columns out of output. This is not a
   live collector, source enrollment, authenticated capture time or coverage proof.
+  A separate source-constrained host review now requires pinned ordered originals,
+  permitted identifier kinds, observation windows and cross-source capture skew
+  before grouping. This enforces reviewed supplied claims, not authenticated source
+  enrollment, real collection coverage or trusted clocks.
   For the existing DNS workflow, a recipient can reproduce the complete multi-input review under independent
   report, ordered-original and scope byte pins. Input order, source-row references,
   coverage and every report field must match the current implementation. Pins need
