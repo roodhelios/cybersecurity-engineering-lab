@@ -69,6 +69,9 @@ The backlog is ordered to produce complete, reviewable systems instead of many d
   A separate mock host-observation schema now supports explicit namespace/scope,
   strong identifier claims, source references and identity-conflict findings. It is
   not a general finding taxonomy, authenticated inventory or accepted ownership.
+  A private CSV export now regenerates the host review from original sources and
+  preserves one row per group, conflict links and source-row observations for table
+  review. It does not accept an unverified incoming report or select source truth.
 - [ ] Normalize and deduplicate discoveries from multiple mock sources. Saved DNS
   snapshots now normalize hostnames and IP addresses, reject ambiguous duplicate rows,
   and compare address sets with source row references. Saved Zeek DNS JSON can supply snapshots for one explicit address family, with
