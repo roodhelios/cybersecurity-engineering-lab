@@ -75,6 +75,8 @@ Neither result establishes malicious activity.
 review groups, with one matching group and one unresolved identifier component.
 The [identity review guide](projects/asset-intelligence/asset-identity-review/README.md)
 includes complete private-output commands, exact scope/schema and source-trust limits.
+Its [CSV export](projects/asset-intelligence/asset-identity-review/README.md#export-groups-for-table-review)
+keeps one row per group, unresolved conflicts and original-row lineage for table review.
 
 `osquery-hosts` reviews two saved native-format host rows with a peer source under
 a separately pinned context: four records, three groups and one matched UUID claim.

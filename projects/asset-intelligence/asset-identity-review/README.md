@@ -40,6 +40,47 @@ inputs and reports private and outside Git. Remove the temporary directory when 
 retention is needed. Exit 0 includes unresolved findings; exit 2 publishes nothing
 new and returns a fixed diagnostic without raw private fields or paths.
 
+## Export groups for table review
+
+For a spreadsheet or another CSV reader, regenerate the review from the original
+sources and write a new private file:
+
+```bash
+review_dir=$(mktemp -d)
+python projects/asset-intelligence/asset-identity-review/asset_review_csv.py \
+  projects/asset-intelligence/asset-identity-review/examples/cloud.json \
+  projects/asset-intelligence/asset-identity-review/examples/endpoint.json \
+  --namespace synthetic-assets --scope synthetic --output "$review_dir/review.csv"
+```
+
+Expect `asset_identity_csv_created`, `record_count: 7`, `group_count: 6` and
+`unresolved_component_count: 1`. The CSV has six data rows, including two separate
+`unresolved_identity_conflict` rows linked by the same conflict ID. One matching
+group retains both source records. Records sharing only an IP/hostname stay separate.
+An empty review writes only the header. No row is a selected source of truth.
+
+Scalar columns identify scope, namespace, canonical review digest, group, status,
+conflict and record count. JSON-valued cells preserve source byte digests/capture
+claims, original input/row references paired with normalized observations, hostname
+and address sets, and conflicting identifiers. Parse those cells as JSON when doing
+programmatic analysis. CSV quoting preserves the JSON; comma-splitting does not.
+All source claims are validated before export. Scalar text uses fixed strings or
+strict identifier grammars, and collection cells begin with `[` or `{`, so source
+text is not emitted as spreadsheet formula syntax. This is not a general CSV sanitizer.
+
+Stdout returns counts and CSV/canonical-review SHA-256 values, omitting private
+claims and paths. These unsigned digests identify bytes/review content, not an
+author or approval. The CSV contains sensitive identifiers and addresses. Keep it
+outside Git and review which application opens it. It does not include an enrolled
+owner, accepted identity, current state, resolved finding or remediation claim.
+The exporter does not accept an incoming review JSON as proof: it reruns the current
+review against two to eight original sources. Keep their matching trusted checkout
+for reproducibility. Existing JSON review and saved osquery formats are unchanged.
+
+Publication uses the existing POSIX exclusive mode-0600 helper; existing destinations
+are preserved. Output is bounded to 32 MiB. The input/trusted-path limits below still
+apply. Sources are read-only, and no spreadsheet process or network service starts.
+
 ## Input and identity contract
 
 Supply two to eight UTF-8 JSON documents, each at most 1 MiB with exactly:
