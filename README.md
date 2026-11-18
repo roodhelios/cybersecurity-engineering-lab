@@ -77,6 +77,9 @@ The [identity review guide](projects/asset-intelligence/asset-identity-review/RE
 includes complete private-output commands, exact scope/schema and source-trust limits.
 Its [CSV export](projects/asset-intelligence/asset-identity-review/README.md#export-groups-for-table-review)
 keeps one row per group, unresolved conflicts and original-row lineage for table review.
+Use the [source-constrained workflow](projects/asset-intelligence/asset-identity-review/SOURCE_REQUIREMENTS.md)
+to require reviewed original bytes, identifier-kind grants and collection-time bounds
+before grouping. This does not authenticate a collector or accept asset ownership.
 
 `osquery-hosts` reviews two saved native-format host rows with a peer source under
 a separately pinned context: four records, three groups and one matched UUID claim.
