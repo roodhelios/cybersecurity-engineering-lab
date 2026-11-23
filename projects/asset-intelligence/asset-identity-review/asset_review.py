@@ -182,15 +182,19 @@ def review_sources(originals, *, namespace, scope):
             "effective exposure, compromise, remediation or live discovery is established."}
 
 
-def _read(path):
+def _read(path, limit=None):
+    if limit is None:
+        limit = MAX_INPUT_BYTES
+    if type(limit) is not int or limit < 1:
+        raise ValueError("positive byte bound required")
     if os.name != "posix":
         raise ValueError("bounded private input requires POSIX")
     with os.fdopen(os.open(path, os.O_RDONLY | os.O_NONBLOCK | os.O_NOFOLLOW), "rb") as source:
         info = os.fstat(source.fileno())
-        if not stat.S_ISREG(info.st_mode) or info.st_size > MAX_INPUT_BYTES:
+        if not stat.S_ISREG(info.st_mode) or info.st_size > limit:
             raise ValueError("bounded regular input required")
-        data = source.read(MAX_INPUT_BYTES + 1)
-    if len(data) > MAX_INPUT_BYTES:
+        data = source.read(limit + 1)
+    if len(data) > limit:
         raise ValueError("source exceeds input bound")
     return data
 

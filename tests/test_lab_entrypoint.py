@@ -20,8 +20,8 @@ class LabEntryPointTests(unittest.TestCase):
             with redirect_stdout(StringIO()) as output:
                 self.assertEqual(main(['list', '--format', 'json']), 0)
             rows = json.loads(output.getvalue())['exercises']
-            self.assertEqual(len(rows), 15)
-            self.assertEqual(len({row['name'] for row in rows}), 15)
+            self.assertEqual(len(rows), 16)
+            self.assertEqual(len({row['name'] for row in rows}), 16)
             self.assertEqual(sum(row['dependencies'] == 'standard-library' for row in rows), 7)
             with redirect_stdout(StringIO()) as output:
                 self.assertEqual(main(['list']), 0)

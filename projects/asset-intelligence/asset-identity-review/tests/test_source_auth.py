@@ -2,6 +2,7 @@ import base64
 import copy
 from contextlib import redirect_stderr, redirect_stdout
 import hashlib
+import json
 from io import StringIO
 from pathlib import Path
 import sys
@@ -182,6 +183,92 @@ class SourceAuthenticationTests(unittest.TestCase):
         result = auth.exercise()
         self.assertEqual(result['unresolved_component_count'], 1)
         self.assertFalse(result['source_truth_verified'])
+
+    def verify(self, report_data=None, **changes):
+        data = _canonical(self.review()) if report_data is None else report_data
+        options = self.options | {'expected_bundle_sha256': digest(self.bundle()),
+                                  'expected_report_sha256': digest(data)} | changes
+        return auth.verify_report(data, self.originals, self.requirements,
+                                  self.policy_data, self.bundle(), **options)
+
+    def test_received_report_reproduces_complete_review_at_selected_instant(self):
+        result = self.verify()
+        self.assertEqual(result['status'], 'authenticated_source_identity_report_reproduced')
+        self.assertEqual(result['unresolved_component_count'], 1)
+        self.assertTrue(result['collector_key_claims_verified'])
+        self.assertFalse(result['source_truth_verified'])
+        self.assertFalse(result['current_policy_verified'])
+        self.assertNotIn('source_claims', result)
+        self.assertEqual(result, self.verify())
+
+    def test_report_pin_precedes_reproduction_and_parsing(self):
+        data = _canonical(self.review())
+        with patch.object(auth, 'review_authenticated', side_effect=AssertionError('must not reproduce')):
+            with self.assertRaises(ValueError):
+                self.verify(data, expected_report_sha256='0' * 64)
+
+    def test_repinning_forged_report_does_not_bypass_complete_reproduction(self):
+        original = self.review()
+        variants = [original | {'source_truth_verified': True},
+                    original | {'unexpected': True},
+                    original | {'collector_key_claims_verified': 1},
+                    original | {'verified_at': '2026-11-17T00:03:00Z'}]
+        nested = copy.deepcopy(original)
+        nested['constrained_review']['review']['unresolved_component_count'] = 0
+        variants.append(nested)
+        for report in variants:
+            with self.subTest(keys=list(report)), self.assertRaises(ValueError):
+                self.verify(_canonical(report))
+
+    def test_selected_time_and_bundle_still_control_signatures(self):
+        data = _canonical(self.review())
+        for at in ('2026-11-17T00:03:00Z', '2026-11-17T00:31:00Z'):
+            with self.subTest(at=at), self.assertRaises(ValueError):
+                self.verify(data, at=at)
+        self.claims[0]['signature_b64'] = self.claims[1]['signature_b64']
+        with self.assertRaises(ValueError):
+            self.verify(data)
+
+    def test_duplicate_malformed_and_oversized_received_reports_reject(self):
+        for data in (b'{', b'{"schema_version":1,"schema_version":1}', b''):
+            with self.subTest(length=len(data)), self.assertRaises(ValueError):
+                self.verify(data)
+        data = _canonical(self.review())
+        with patch.object(auth, 'MAX_REPORT_BYTES', 1), self.assertRaises(ValueError):
+            self.verify(data)
+
+    def test_verify_cli_reads_full_report_bound_and_creates_no_files(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            data = _canonical(self.review()) + b' ' * (1024 * 1024)
+            report = root / 'received.json'
+            report.write_bytes(data)
+            args = ['verify', str(report)]
+            for i, source in enumerate(self.originals):
+                path = root / ('source' + str(i) + '.json')
+                path.write_bytes(source)
+                args.append(str(path))
+            for name, content in [('requirements', self.requirements), ('authority', self.policy_data), ('bundle', self.bundle())]:
+                path = root / (name + '.json')
+                path.write_bytes(content)
+                args += ['--' + name, str(path), '--expected-' + name + '-sha256', digest(content)]
+            args += ['--expected-report-sha256', digest(data), '--scope', 'synthetic',
+                     '--namespace', 'synthetic-assets', '--at', self.options['at']]
+            before = {p.name: p.read_bytes() for p in root.iterdir()}
+            with redirect_stdout(StringIO()) as out:
+                self.assertEqual(auth.main(args), 0)
+            self.assertEqual(json.loads(out.getvalue())['group_count'], 6)
+            for private in (str(root), 'collector-0', 'mock-cloud'):
+                self.assertNotIn(private, out.getvalue())
+            self.assertEqual(before, {p.name: p.read_bytes() for p in root.iterdir()})
+            with self.assertRaises(ValueError):
+                auth._read(report)  # Original-source readers keep their default 1 MiB bound.
+            report.unlink()
+            report.symlink_to(root / 'source0.json')
+            with redirect_stdout(StringIO()) as out, redirect_stderr(StringIO()) as err:
+                self.assertEqual(auth.main(args), 2)
+                self.assertEqual(out.getvalue(), '')
+            self.assertNotIn(str(root), err.getvalue())
 
 
 if __name__ == '__main__': unittest.main()

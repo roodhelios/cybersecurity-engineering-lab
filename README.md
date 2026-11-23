@@ -83,6 +83,11 @@ before grouping. This does not authenticate a collector or accept asset ownershi
 The separate [per-source signature review](projects/asset-intelligence/asset-identity-review/SOURCE_AUTH.md)
 checks an independently enrolled key for every expected source before the same
 grant checks and grouping. It authenticates key claims, not source truth or ownership.
+Its read-only recipient command reproduces the complete received report against the
+originals, independent pins and separately selected review instant. It does not
+establish current policy or enrollment freshness.
+Run its temporary signed creation/receipt exercise with `python -m lab run asset-source-auth`
+after installing the guide's optional authentication dependency.
 
 `osquery-hosts` reviews two saved native-format host rows with a peer source under
 a separately pinned context: four records, three groups and one matched UUID claim.
