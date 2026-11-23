@@ -85,6 +85,8 @@ accepted asset ownership or remediation. Source IDs and capture times remain cla
 Tests cover the pre-grouping rejection, all pins before source parsing, exact ordered
 coverage, windows/skew/timezone boundaries, malformed requirements, empty inventories,
 private CLI publication and preservation of legacy conflicts. Socket creation is
-blocked. Prepared with assistant support and synthetic fixtures. Next: authenticate
-enrolled collector claims and maintain independently distributed current policy state
-before treating source IDs or capture times as operational authority.
+blocked. Prepared with assistant support and synthetic fixtures. The separate
+[per-source signature workflow](SOURCE_AUTH.md) now authenticates exact source-key
+claims before these constraints, without changing this unsigned format. Next:
+independently distribute current enrollment/requirements and review the collection
+process before treating source IDs or capture times as operational authority.

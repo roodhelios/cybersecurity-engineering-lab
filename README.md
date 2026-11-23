@@ -80,6 +80,9 @@ keeps one row per group, unresolved conflicts and original-row lineage for table
 Use the [source-constrained workflow](projects/asset-intelligence/asset-identity-review/SOURCE_REQUIREMENTS.md)
 to require reviewed original bytes, identifier-kind grants and collection-time bounds
 before grouping. This does not authenticate a collector or accept asset ownership.
+The separate [per-source signature review](projects/asset-intelligence/asset-identity-review/SOURCE_AUTH.md)
+checks an independently enrolled key for every expected source before the same
+grant checks and grouping. It authenticates key claims, not source truth or ownership.
 
 `osquery-hosts` reviews two saved native-format host rows with a peer source under
 a separately pinned context: four records, three groups and one matched UUID claim.
