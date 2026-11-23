@@ -94,6 +94,11 @@ The backlog is ordered to produce complete, reviewable systems instead of many d
   permitted identifier kinds, observation windows and cross-source capture skew
   before grouping. This enforces reviewed supplied claims, not authenticated source
   enrollment, real collection coverage or trusted clocks.
+  A separate per-source Ed25519 review now requires an exact independently pinned
+  enrollment, complete signed source set and unchanged requirements before the same
+  grant/time/grouping checks. Each source has its own enrolled key; conflicts remain
+  unresolved. Physical collector identity, independence, truth and fresh policy
+  distribution remain outside that verification.
   For the existing DNS workflow, a recipient can reproduce the complete multi-input review under independent
   report, ordered-original and scope byte pins. Input order, source-row references,
   coverage and every report field must match the current implementation. Pins need
