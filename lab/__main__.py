@@ -27,6 +27,8 @@ EXERCISES = (
      'standard-library', 'Group scoped mock host identifiers without hiding contradictory claims'),
     ('osquery-hosts', ('projects/asset-intelligence/asset-identity-review/demo_osquery_review.py',),
      'standard-library', 'Review a pinned saved osquery host export with explicit peer claims'),
+    ('asset-source-auth', ('projects/asset-intelligence/asset-identity-review/source_auth.py', 'demo'),
+     AUTH, 'Authenticate each expected source key and reproduce its received identity review'),
     ('dns-recipient', (DNS+'demo_authorized_handoff.py',), AUTH,
      'Check recipient-signed requirements using temporary keys'),
     ('dns-reviewers', (DNS+'demo_reviewer_handoff.py',), AUTH,

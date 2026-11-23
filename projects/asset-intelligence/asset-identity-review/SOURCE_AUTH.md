@@ -24,6 +24,7 @@ Expected selected output:
   "status": "authenticated_source_identity_exercise_passed",
   "collector_key_claims_verified": true,
   "source_truth_verified": false,
+  "received_report_reproduced": true,
   "record_count": 7,
   "group_count": 6,
   "unresolved_component_count": 1
@@ -100,6 +101,53 @@ Inputs remain unchanged, existing outputs are preserved and failures return 2 wi
 a fixed diagnostic. Requirements/authority/bundle limits are 16/16/32 KiB, each
 original 1 MiB and report 16 MiB. Existing bounded POSIX no-follow readers and
 exclusive publication are reused; trust ancestors and cooperative writers.
+
+## Reproduce a received report
+
+The read-only `verify` command checks the complete received JSON value against a
+fresh execution of signature, enrollment, grant, capture and grouping checks. Supply
+the original report bytes and their independent pin, the original ordered sources,
+and the same independently selected requirements/authority/bundle pins:
+
+```bash
+python projects/asset-intelligence/asset-identity-review/source_auth.py verify \
+  /private/reviews/received-authenticated-review.json \
+  /private/cloud.json /private/endpoint.json \
+  --expected-report-sha256 INDEPENDENT_RECEIVED_REPORT_SHA256 \
+  --requirements /private/requirements.json \
+  --expected-requirements-sha256 INDEPENDENT_REQUIREMENTS_SHA256 \
+  --authority /private/source-authority.json \
+  --expected-authority-sha256 INDEPENDENT_AUTHORITY_SHA256 \
+  --bundle /private/source-claims.json --expected-bundle-sha256 INDEPENDENT_BUNDLE_SHA256 \
+  --scope owned --namespace SELECTED_NAMESPACE --at INDEPENDENT_SELECTED_REVIEW_INSTANT
+```
+
+Placeholders intentionally reject. The supplied instant must equal the report's
+review instant and satisfy all signed/key windows. Select that instant through the
+independent review process; the verifier never copies it from the received report.
+This reproduces that selected historical review, not current key authorization.
+An old pinned active enrollment can still be revoked elsewhere today. Retain and
+distribute current policy separately; `current_policy_verified` stays false.
+
+Success returns `authenticated_source_identity_report_reproduced`, exact received
+report digest and counts, including unresolved components. Key-claim verification
+is true under the selected enrollment/instant; source truth and current-policy
+verification are false. No new report is written and stdout exposes no source IDs,
+keys, signatures or input paths. Every input remains unchanged.
+
+The received report pin is checked before reproduction, and all selected context
+pins precede parsing. Received fields never choose source paths, policy, keys,
+scope or time. Every field, including nested conflicts, counts, claims and flags,
+must reproduce. Re-pinning a forged report is insufficient. Duplicate JSON keys,
+extra/missing fields and type changes reject. Harmless JSON object formatting may
+differ, but the byte pin still selects the exact received artifact. Reports are
+bounded to 16 MiB; source readers retain their 1 MiB default. The same POSIX
+no-follow rules apply. Errors return 2 with a fixed diagnostic and no success JSON.
+
+The temporary `demo` now creates and receives a report in memory with real ephemeral
+keys, returning `received_report_reproduced: true`. It stores no keys or reports.
+Current trusted code must reproduce the full JSON value. This is not supported
+historical model execution, authenticated collector identity or policy freshness.
 
 ## What remains unverified
 

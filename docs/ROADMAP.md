@@ -99,6 +99,10 @@ The backlog is ordered to produce complete, reviewable systems instead of many d
   grant/time/grouping checks. Each source has its own enrolled key; conflicts remain
   unresolved. Physical collector identity, independence, truth and fresh policy
   distribution remain outside that verification.
+  A recipient can now reproduce every field of that authenticated review from the
+  originals and independently selected report/context pins and review instant.
+  This checks historical selected-claim consistency, not current authorization or
+  freshness of the enrolled-source policy.
   For the existing DNS workflow, a recipient can reproduce the complete multi-input review under independent
   report, ordered-original and scope byte pins. Input order, source-row references,
   coverage and every report field must match the current implementation. Pins need

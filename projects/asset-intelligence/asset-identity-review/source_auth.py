@@ -173,6 +173,26 @@ def review_authenticated(originals, requirements_data, authority_data, bundle_da
     return result
 
 
+def verify_report(report_data, originals, requirements_data, authority_data, bundle_data, *,
+                  expected_report_sha256, expected_requirements_sha256,
+                  expected_authority_sha256, expected_bundle_sha256, scope, namespace, at):
+    """Reproduce all report fields at a separately selected review instant."""
+    if type(report_data) is not bytes or not 0 < len(report_data) <= MAX_REPORT_BYTES:
+        raise ValueError('bounded received report required')
+    _pin(report_data, expected_report_sha256)
+    expected = review_authenticated(originals, requirements_data, authority_data, bundle_data,
+        expected_requirements_sha256=expected_requirements_sha256,
+        expected_authority_sha256=expected_authority_sha256,
+        expected_bundle_sha256=expected_bundle_sha256, scope=scope, namespace=namespace, at=at)
+    if _canonical(_parse(report_data)) != _canonical(expected):
+        raise ValueError('received report differs from complete current reproduction')
+    return {'status': 'authenticated_source_identity_report_reproduced',
+        'report_sha256': expected_report_sha256, 'collector_key_claims_verified': True,
+        'source_truth_verified': False, 'current_policy_verified': False,
+        **{key: expected['constrained_review']['review'][key]
+           for key in ('record_count', 'group_count', 'unresolved_component_count')}}
+
+
 def exercise():
     SigningKey, _, _ = _crypto(); root = Path(__file__).resolve().parent / 'examples'
     originals = [(root/name).read_bytes() for name in ('cloud.json', 'endpoint.json')]
@@ -192,38 +212,69 @@ def exercise():
         for data,r,k in zip(originals,rules,signers)]
     bundle = _canonical({'schema_version':1,'claims':claims}); options['expected_bundle_sha256']=hashlib.sha256(bundle).hexdigest()
     result = review_authenticated(originals,requirements,authority_data,bundle,**options)
+    report_data = _canonical(result)
+    verified = verify_report(report_data, originals, requirements, authority_data, bundle,
+        expected_report_sha256=hashlib.sha256(report_data).hexdigest(), **options)
     return {'status':'authenticated_source_identity_exercise_passed','collector_key_claims_verified':True,
-        'source_truth_verified':False,**{key:result['constrained_review']['review'][key]
+        'source_truth_verified':False, 'received_report_reproduced':
+            verified['status'] == 'authenticated_source_identity_report_reproduced',
+        **{key:result['constrained_review']['review'][key]
             for key in ('record_count','group_count','unresolved_component_count')}}
 
 
 def main(argv=None):
-    parser=argparse.ArgumentParser(description=__doc__,allow_abbrev=False)
-    commands=parser.add_subparsers(dest='command',required=True); commands.add_parser('demo')
-    review=commands.add_parser('review',allow_abbrev=False);review.add_argument('sources',nargs='+',type=Path)
-    for name in ('requirements','authority','bundle'):
-        review.add_argument('--'+name,type=Path,required=True);review.add_argument('--expected-'+name+'-sha256',required=True)
-    review.add_argument('--scope',choices=('synthetic','owned','authorized'),required=True)
-    for name in ('namespace','at'):review.add_argument('--'+name,required=True)
-    review.add_argument('--output',type=Path,required=True)
-    args=parser.parse_args(argv)
-    try:
-        if args.command=='demo':result=exercise()
+    parser = argparse.ArgumentParser(description=__doc__, allow_abbrev=False)
+    commands = parser.add_subparsers(dest='command', required=True)
+    commands.add_parser('demo')
+    for command in ('review', 'verify'):
+        selected = commands.add_parser(command, allow_abbrev=False)
+        if command == 'verify':
+            selected.add_argument('report', type=Path)
+            selected.add_argument('--expected-report-sha256', required=True)
         else:
-            if not 2 <= len(args.sources) <= 8: raise ValueError('two to eight sources required')
-            report=review_authenticated([_read(p) for p in args.sources],_read(args.requirements),_read(args.authority),_read(args.bundle),
-                expected_requirements_sha256=args.expected_requirements_sha256,expected_authority_sha256=args.expected_authority_sha256,
-                expected_bundle_sha256=args.expected_bundle_sha256,scope=args.scope,namespace=args.namespace,at=args.at)
-            data=(json.dumps(report,sort_keys=True,indent=2,allow_nan=False)+'\n').encode()
-            if len(data)>MAX_REPORT_BYTES:raise ValueError('authenticated review exceeds bound')
-            _publish(args.output,data)
-            result={'status':'authenticated_source_identity_review_created','collector_key_claims_verified':True,
-                'source_truth_verified':False,'report_sha256':hashlib.sha256(data).hexdigest(),
-                **{key:report['constrained_review']['review'][key] for key in ('record_count','group_count','unresolved_component_count')}}
-    except (OSError,ValueError,TypeError,KeyError,UnicodeError,RecursionError,OverflowError):
-        print('error: authenticated identity review failed; check private sources, independent pins, enrollment, time and new output',file=sys.stderr)
+            selected.add_argument('--output', type=Path, required=True)
+        selected.add_argument('sources', nargs='+', type=Path)
+        for name in ('requirements', 'authority', 'bundle'):
+            selected.add_argument('--' + name, type=Path, required=True)
+            selected.add_argument('--expected-' + name + '-sha256', required=True)
+        selected.add_argument('--scope', choices=('synthetic', 'owned', 'authorized'), required=True)
+        for name in ('namespace', 'at'):
+            selected.add_argument('--' + name, required=True)
+    args = parser.parse_args(argv)
+    try:
+        if args.command == 'demo':
+            result = exercise()
+        else:
+            if not 2 <= len(args.sources) <= 8:
+                raise ValueError('two to eight sources required')
+            options = dict(expected_requirements_sha256=args.expected_requirements_sha256,
+                expected_authority_sha256=args.expected_authority_sha256,
+                expected_bundle_sha256=args.expected_bundle_sha256, scope=args.scope,
+                namespace=args.namespace, at=args.at)
+            # Capture each input once. The report's own time or policy claims
+            # never select options for recipient verification.
+            report_data = _read(args.report, MAX_REPORT_BYTES) if args.command == 'verify' else None
+            inputs = ([_read(path) for path in args.sources], _read(args.requirements),
+                      _read(args.authority), _read(args.bundle))
+            if args.command == 'verify':
+                result = verify_report(report_data, *inputs,
+                    expected_report_sha256=args.expected_report_sha256, **options)
+            else:
+                report = review_authenticated(*inputs, **options)
+                data = (json.dumps(report, sort_keys=True, indent=2, allow_nan=False) + '\n').encode()
+                if len(data) > MAX_REPORT_BYTES:
+                    raise ValueError('authenticated review exceeds bound')
+                _publish(args.output, data)
+                result = {'status': 'authenticated_source_identity_review_created',
+                    'collector_key_claims_verified': True, 'source_truth_verified': False,
+                    'report_sha256': hashlib.sha256(data).hexdigest(),
+                    **{key: report['constrained_review']['review'][key]
+                       for key in ('record_count', 'group_count', 'unresolved_component_count')}}
+    except (OSError, ValueError, TypeError, KeyError, UnicodeError, RecursionError, OverflowError):
+        print('error: authenticated identity review failed; check private sources, independent pins, enrollment, time and new output', file=sys.stderr)
         return 2
-    print(json.dumps(result,sort_keys=True));return 0
+    print(json.dumps(result, sort_keys=True))
+    return 0
 
 
 if __name__=='__main__':raise SystemExit(main())
