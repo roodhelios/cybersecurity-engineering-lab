@@ -54,8 +54,10 @@ The `create_claim` API accepts one original, requirements bytes, authority bytes
 their independent pins, explicit scope/namespace/source ID, an in-memory PyNaCl
 `SigningKey`, issuance/expiry and a trusted `at` instant. It confirms the key matches
 that source enrollment and validates that source's original/grants/capture bounds.
-The module's `exercise()` shows this flow with temporary keys. Secret loading/export
-and a real collector service are not implemented by the CLI.
+The module's `exercise()` shows this flow with temporary keys. The separate
+[claim preparation CLI](SOURCE_CLAIMS.md) now loads one protected local raw seed,
+creates one claim and verifies a complete bundle before publication. Key generation
+or export for operational use and a real collector service remain external.
 
 The signed version-1 claim binds its dedicated purpose/domain, scope/namespace,
 source ID/key ID, original digest, exact requirements and authority digests, issued
