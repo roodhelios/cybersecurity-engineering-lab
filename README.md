@@ -88,6 +88,11 @@ originals, independent pins and separately selected review instant. It does not
 establish current policy or enrollment freshness.
 Run its temporary signed creation/receipt exercise with `python -m lab run asset-source-auth`
 after installing the guide's optional authentication dependency.
+To try the complete file-based signing, bundle, review and recipient flow, run
+`python projects/asset-intelligence/asset-identity-review/demo_source_claims.py`.
+It uses temporary keys and leaves no retained files. The
+[claim preparation guide](projects/asset-intelligence/asset-identity-review/SOURCE_CLAIMS.md)
+shows commands for separately enrolled local keys; no custom signing script is needed.
 
 `osquery-hosts` reviews two saved native-format host rows with a peer source under
 a separately pinned context: four records, three groups and one matched UUID claim.

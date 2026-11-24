@@ -99,6 +99,11 @@ The backlog is ordered to produce complete, reviewable systems instead of many d
   grant/time/grouping checks. Each source has its own enrolled key; conflicts remain
   unresolved. Physical collector identity, independence, truth and fresh policy
   distribution remain outside that verification.
+  File-based claim preparation now supports protected local raw seeds and verifies
+  every enrolled signature and constrained original before publishing a bundle.
+  A temporary CLI exercise reaches report creation and recipient reproduction.
+  Operational key provisioning, source truth and current enrollment distribution
+  remain external; this does not complete accepted ownership.
   A recipient can now reproduce every field of that authenticated review from the
   originals and independently selected report/context pins and review instant.
   This checks historical selected-claim consistency, not current authorization or
