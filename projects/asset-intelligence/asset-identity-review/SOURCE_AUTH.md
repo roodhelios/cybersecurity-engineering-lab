@@ -164,5 +164,8 @@ Tests use real ephemeral signatures with socket creation blocked, including wron
 source keys, incomplete/substituted inputs, revocation, time bounds, all pins before
 parsing, valid signatures with ungranted identifiers, preserved conflicts and private
 CLI handling. Run `python -m unittest discover -s projects/asset-intelligence/asset-identity-review/tests`.
-Prepared with assistant support and synthetic inputs. Next: trusted current enrollment
-distribution and independent collection-process evidence before operational authority.
+The separate [signed policy selection workflow](SOURCE_POLICY_STATE.md) now selects
+and advances a pinned local recipient head before state-aware source review. The
+direct historical interface above does not use it automatically. Global freshness,
+trusted issuer rotation and independent collection-process evidence remain unfinished.
+Prepared with assistant support and synthetic inputs.

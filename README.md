@@ -93,6 +93,11 @@ To try the complete file-based signing, bundle, review and recipient flow, run
 It uses temporary keys and leaves no retained files. The
 [claim preparation guide](projects/asset-intelligence/asset-identity-review/SOURCE_CLAIMS.md)
 shows commands for separately enrolled local keys; no custom signing script is needed.
+To select and advance a recipient's signed source policy, run
+`python projects/asset-intelligence/asset-identity-review/demo_source_policy_state.py`.
+The [policy selection guide](projects/asset-intelligence/asset-identity-review/SOURCE_POLICY_STATE.md)
+explains local rollback detection against a retained state pin, expiry refresh and
+state-aware review. It does not establish globally latest policy or source truth.
 
 `osquery-hosts` reviews two saved native-format host rows with a peer source under
 a separately pinned context: four records, three groups and one matched UUID claim.

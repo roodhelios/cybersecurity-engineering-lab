@@ -108,6 +108,11 @@ The backlog is ordered to produce complete, reviewable systems instead of many d
   originals and independently selected report/context pins and review instant.
   This checks historical selected-claim consistency, not current authorization or
   freshness of the enrolled-source policy.
+  A separate signed source-policy update workflow now selects one pinned local
+  recipient head, requires exact sequence/predecessor advances and reviews sources
+  under that selected revision. Native concurrent processes have one winner for
+  the same old pin. Expired heads can refresh but cannot authorize review. Trusted
+  issuer rotation, checkpoint delivery and global policy freshness remain unfinished.
   For the existing DNS workflow, a recipient can reproduce the complete multi-input review under independent
   report, ordered-original and scope byte pins. Input order, source-row references,
   coverage and every report field must match the current implementation. Pins need
